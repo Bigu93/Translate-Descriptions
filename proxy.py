@@ -11,9 +11,12 @@ import logging
 
 load_dotenv()
 
+
 ######################
-#   Logging setup    #
+#   LOGGING SETUP    #
 ######################
+
+
 handler = RotatingFileHandler(
     "record_debug.log", maxBytes=10000, backupCount=3, encoding="utf-8"
 )
@@ -31,10 +34,14 @@ app = Flask(__name__)
 app.config["CORS_HEADERS"] = "Content-Type"
 cors = CORS(app)
 
+
 ######################
-#   Config setup     #
+#   CONFIG SETUP     #
 ######################
+
+
 OPENAI_API_KEY = os.getenv("O_SECRET")
+client = OpenAI(api_key=OPENAI_API_KEY)
 ALLOWED_IPs = os.getenv("IPs")
 VALID_API_KEY = os.getenv("API_KEY")
 ALLOWED_ORIGINS = ["https://butosklep.pl", "https://butosklep.iai-shop.com"]
@@ -45,8 +52,6 @@ Klapki Z Kokardą I Ozdobnym Misiem Fuksja Suzy, Damskie Lakierowane Sandały Na
 ###
 Return just the translated text in JSON following format:{"Czech":"Sample text"}"""
 PROMPT_DESCRIPTION = """Act like a language translator. I will give you product descriptions for translating. Important thing is to remove all HTML tags. You will get langs list for all translations. Return just the translated text in following JSON format: {"Sample lang":"Sample text","Sample lang":"Sample text",}"""
-
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def is_ip_allowed(client_ip_str):
@@ -74,8 +79,6 @@ def restrict_access():
     #     if not is_ip_allowed(client_ip):
     #         return "Access denied!", 403
     #     return
-    # if not is_ip_allowed(client_ip) or api_key != hashed_key:
-    #     return "Access denied asshole!", 403
     if api_key != hashed_key:
         return "Acces denied!", 403
 
@@ -186,10 +189,8 @@ def process_translation_request(user_input, translate_type, langs_list):
 
 def parse_response_content(response_content):
     try:
-        # First, try to directly parse the response content as JSON
         return json.loads(response_content)
     except json.JSONDecodeError:
-        # If direct parsing fails, try extracting JSON from formatted content
         try:
             json_start = response_content.index("{")
             json_end = response_content.rindex("}") + 1
