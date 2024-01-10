@@ -3,6 +3,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
 from logging.handlers import RotatingFileHandler
+from prompts import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME
 import traceback
 import hashlib
 import os
@@ -30,15 +31,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 logger.addHandler(handler)
 
-app = Flask(__name__)
-app.config["CORS_HEADERS"] = "Content-Type"
-cors = CORS(app)
-
 
 ######################
 #   CONFIG SETUP     #
 ######################
 
+app = Flask(__name__)
+app.config["CORS_HEADERS"] = "Content-Type"
+cors = CORS(app)
 
 OPENAI_API_KEY = os.getenv("O_SECRET")
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -46,12 +46,6 @@ ALLOWED_IPs = os.getenv("IPs")
 VALID_API_KEY = os.getenv("API_KEY")
 ALLOWED_ORIGINS = ["https://butosklep.pl", "https://butosklep.iai-shop.com"]
 ROUTES_WITHOUT_API_KEY = ["/"]
-PROMPT_NAME = """Act like a language translator. I will give you product name and desired lang for translating. Keep the word seqeuence in place. Don't add any special signs like commas, hyphens or similar to the response. I will give you some examples in Polish. In given examples, the "Suzy", "Carrie", "KK174215", "LL274A177", "MR870-49" are special names. If the sentence has special name, keep it at the end of sentence, but if it's from Big Star company or different, put it before the last one. Examples in Polish:
-###
-Klapki Z Kokardą I Ozdobnym Misiem Fuksja Suzy, Damskie Lakierowane Sandały Na Słupku Maciejka Czarne Carrie,Męskie Buty Trekkingowe Big Star KK174215 Czarne, Damskie Tenisówki Na Platformie Big Star LL274A177 Białe, Lakierowane Botki Na Obcasie S.Barski MR870-49 Jasnoszare
-###
-Return just the translated text in JSON following format:{"Czech":"Sample text"}"""
-PROMPT_DESCRIPTION = """Act like a language translator. I will give you product descriptions for translating. Important thing is to remove all HTML tags. You will get langs list for all translations. Return just the translated text in following JSON format: {"Sample lang":"Sample text","Sample lang":"Sample text",}"""
 
 
 def is_ip_allowed(client_ip_str):
@@ -153,9 +147,9 @@ def process_translation_request(user_input, translate_type, langs_list):
     messages = []
 
     if translate_type == "description":
-        prompt_content = PROMPT_DESCRIPTION
+        prompt_content = TRANSLATE_PRODUCT_DESC
     elif translate_type == "name":
-        prompt_content = PROMPT_NAME
+        prompt_content = TRANSLATE_PRODUCT_NAME
     else:
         return (
             "Coś poszło nie tak :(",
