@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response, Response
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
