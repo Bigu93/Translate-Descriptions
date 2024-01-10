@@ -1,3 +1,4 @@
-from proxy import app as application
+from proxy import app_test as application
 
-if __name__ == "__main__": application.run()
+if __name__ == "__main__":
+    application.run()

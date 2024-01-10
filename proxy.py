@@ -20,13 +20,13 @@ from config import (
 )
 
 # Initialize Flask App
-app = Flask(__name__)
-app.config["CORS_HEADERS"] = "Content-Type"
-cors = CORS(app)
+app_test = Flask(__name__)
+app_test.config["CORS_HEADERS"] = "Content-Type"
+cors = CORS(app_test)
 
 # Use the decorators with your routes
-app.errorhandler(500)(internal_server_error)
-app.errorhandler(400)(invalid_json_format)
+app_test.errorhandler(500)(internal_server_error)
+app_test.errorhandler(400)(invalid_json_format)
 
 # Load Environment Variables
 load_dotenv()
@@ -42,7 +42,7 @@ def is_ip_allowed(client_ip_str):
     return client_ip_str in ALLOWED_IPs
 
 
-@app.before_request
+@app_test.before_request
 def restrict_access():
     if request.method == "OPTIONS":
         origin = request.headers.get("Origin")
@@ -67,7 +67,7 @@ def restrict_access():
         return "Acces denied!", 403
 
 
-@app.route("/proxy", methods=["GET", "POST"])
+@app_test.route("/proxy", methods=["GET", "POST"])
 def proxy_request():
     if request.method != "POST":
         return f"Unsupported method {request.method}", 405
@@ -88,10 +88,10 @@ def proxy_request():
     return response
 
 
-@app.route("/")
+@app_test.route("/")
 def hello_world():
     return "Cześć Butosklep!"
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app_test.run(host="0.0.0.0", port=6000)
