@@ -54,7 +54,6 @@ def process_translation_request(
     translate_type,
     langs_list,
     client,
-    first_dec,
 ):
     model = "gpt-3.5-turbo-1106"
     messages = []
