@@ -1,6 +1,9 @@
 import os
+from dotenv import load_dotenv
 
 # Load environment variables
+load_dotenv()
+
 OPENAI_API_KEY = os.getenv("O_SECRET")
 ALLOWED_IPs = os.getenv("IPs")
 VALID_API_KEY = os.getenv("API_KEY")

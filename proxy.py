@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
-from dotenv import load_dotenv
 from openai import OpenAI
 from utils import (
     calc_hash,
@@ -27,9 +26,6 @@ cors = CORS(app_test)
 # Use the decorators with your routes
 app_test.errorhandler(500)(internal_server_error)
 app_test.errorhandler(400)(invalid_json_format)
-
-# Load Environment Variables
-load_dotenv()
 
 # Setup Logging
 logger = setup_logger()
