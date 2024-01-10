@@ -2,50 +2,35 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
-from logging.handlers import RotatingFileHandler
-from prompts import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME
 import traceback
-import hashlib
-import os
-import json
-import logging
-
-load_dotenv()
-
-
-######################
-#   LOGGING SETUP    #
-######################
-
-
-handler = RotatingFileHandler(
-    "record_debug.log", maxBytes=10000, backupCount=3, encoding="utf-8"
+from utils import (
+    calc_hash,
+    setup_logger,
+    parse_request_data,
+    validate_request_data,
+    process_translation_request,
 )
-handler.setLevel(logging.ERROR)
-formatter = logging.Formatter(
-    "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
+from config import (
+    OPENAI_API_KEY,
+    ALLOWED_IPs,
+    VALID_API_KEY,
+    ALLOWED_ORIGINS,
+    ROUTES_WITHOUT_API_KEY,
 )
-handler.setFormatter(formatter)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
-logger.addHandler(handler)
-
-
-######################
-#   CONFIG SETUP     #
-######################
-
+# Initialize Flask App
 app = Flask(__name__)
 app.config["CORS_HEADERS"] = "Content-Type"
 cors = CORS(app)
 
-OPENAI_API_KEY = os.getenv("O_SECRET")
+# Load Environment Variables
+load_dotenv()
+
+# Setup Logging
+logger = setup_logger()
+
+# OpenAI Client
 client = OpenAI(api_key=OPENAI_API_KEY)
-ALLOWED_IPs = os.getenv("IPs")
-VALID_API_KEY = os.getenv("API_KEY")
-ALLOWED_ORIGINS = ["https://butosklep.pl", "https://butosklep.iai-shop.com"]
-ROUTES_WITHOUT_API_KEY = ["/"]
 
 
 def is_ip_allowed(client_ip_str):
@@ -69,10 +54,10 @@ def restrict_access():
     api_key = request.headers.get("Authorization")
     hashed_key = calc_hash(VALID_API_KEY)
 
-    # if request.path in ROUTES_WITHOUT_API_KEY:
-    #     if not is_ip_allowed(client_ip):
-    #         return "Access denied!", 403
-    #     return
+    if request.path in ROUTES_WITHOUT_API_KEY:
+        if not is_ip_allowed(client_ip):
+            return "Access denied!", 403
+        return
     if api_key != hashed_key:
         return "Acces denied!", 403
 
@@ -89,7 +74,7 @@ def proxy_request():
         return "Invalid request data", 400
 
     translations, tokens_used, messages = process_translation_request(
-        user_input, translate_type, langs_list
+        user_input, translate_type, langs_list, client
     )
     response = make_response(jsonify(translations, tokens_used, messages))
     origin = request.headers.get("Origin")
@@ -101,14 +86,6 @@ def proxy_request():
 @app.route("/")
 def hello_world():
     return "Cześć Butosklep!"
-
-
-def calc_hash(input):
-    value_to_hash = input
-    hash_method = hashlib.sha256()
-    hash_method.update(value_to_hash.encode("utf-8"))
-    hash_result = hash_method.hexdigest()
-    return hash_result
 
 
 @app.errorhandler(500)
@@ -123,77 +100,6 @@ def invalid_json_format(e, response):
     logger.error(f"JSON parsing error: {str(e)}")
     logger.error("Invalid JSON content: " + response)
     return jsonify(error="Invalid JSON content"), 400
-
-
-def parse_request_data(request_data):
-    user_input = request_data.get("userPrompt")
-    translate_type = request_data.get("translateType")
-    langs_list = request_data.get("languages")
-    return user_input, translate_type, langs_list
-
-
-def validate_request_data(user_input, translate_type, langs_list):
-    if (
-        translate_type not in ["name", "description"]
-        or not user_input
-        or not langs_list
-    ):
-        return False
-    return True
-
-
-def process_translation_request(user_input, translate_type, langs_list):
-    model = "gpt-3.5-turbo-1106"
-    messages = []
-
-    if translate_type == "description":
-        prompt_content = TRANSLATE_PRODUCT_DESC
-    elif translate_type == "name":
-        prompt_content = TRANSLATE_PRODUCT_NAME
-    else:
-        return (
-            "Coś poszło nie tak :(",
-            400,
-        )
-
-    messages.append({"role": "system", "content": prompt_content})
-    messages.append(
-        {
-            "role": "user",
-            "content": f"[{user_input}] Langs:[{','.join(langs_list)}]",
-        }
-    )
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=4000,
-        )
-        response_content = response.choices[0].message.content.strip()
-        tokens_used = response.usage.total_tokens
-        translations = parse_response_content(response_content)
-
-        return translations, tokens_used, messages
-    except json.JSONDecodeError as e:
-        invalid_json_format(e, response_content)
-    except Exception as e:
-        internal_server_error(e)
-
-
-def parse_response_content(response_content):
-    try:
-        return json.loads(response_content)
-    except json.JSONDecodeError:
-        try:
-            json_start = response_content.index("{")
-            json_end = response_content.rindex("}") + 1
-            json_str = response_content[json_start:json_end]
-            return json.loads(json_str)
-        except (ValueError, json.JSONDecodeError) as e:
-            # Handle cases where extraction or parsing fails
-            print(f"Error in extracting or parsing JSON: {e}")
-            return None
 
 
 if __name__ == "__main__":
