@@ -7,7 +7,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("O_SECRET")
 ALLOWED_IPs = os.getenv("IPs")
 VALID_API_KEY = os.getenv("API_KEY")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
 ROUTES_WITHOUT_API_KEY = ["/"]
 TRANSLATE_PRODUCT_NAME = """Act like a language translator. I will give you product name and desired lang for translating. Keep the word seqeuence in place. Don't add any special signs like commas, hyphens or similar to the response. I will give you some examples in Polish. In given examples, the "Suzy", "Carrie", "KK174215", "LL274A177", "MR870-49" are special names. If the sentence has special name, keep it at the end of sentence, but if it's from Big Star company or different, put it before the last one. Examples in Polish:
 ###
