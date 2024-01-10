@@ -1,6 +1,8 @@
 from logging.handlers import RotatingFileHandler
+from flask import jsonify
 from config import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME
 import logging
+import traceback
 import hashlib
 import json
 
@@ -114,3 +116,20 @@ def parse_response_content(response_content):
             # Handle cases where extraction or parsing fails
             print(f"Error in extracting or parsing JSON: {e}")
             return None
+
+
+# Error handling decorators
+def internal_server_error(e):
+    logger = setup_logger()
+    logger.error(f"Error in /proxy route: {str(e)}")
+    logger.error("Traceback: " + traceback.format_exc())
+    return jsonify(error="Internal Server Error"), 500
+
+
+def invalid_json_format(e):
+    logger = setup_logger()
+    logger.error(f"JSON parsing error: {str(e)}")
+    # Assuming `response` is a string describing the error context
+    response = "Invalid JSON content"  # Update this as needed
+    logger.error(response)
+    return jsonify(error=response), 400

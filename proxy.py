@@ -2,13 +2,14 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
-import traceback
 from utils import (
     calc_hash,
     setup_logger,
     parse_request_data,
     validate_request_data,
     process_translation_request,
+    internal_server_error,
+    invalid_json_format,
 )
 from config import (
     OPENAI_API_KEY,
@@ -22,6 +23,10 @@ from config import (
 app = Flask(__name__)
 app.config["CORS_HEADERS"] = "Content-Type"
 cors = CORS(app)
+
+# Use the decorators with your routes
+app.errorhandler(500)(internal_server_error)
+app.errorhandler(400)(invalid_json_format)
 
 # Load Environment Variables
 load_dotenv()
@@ -86,20 +91,6 @@ def proxy_request():
 @app.route("/")
 def hello_world():
     return "Cześć Butosklep!"
-
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    logger.error(f"Error in /proxy route: {str(e)}")
-    logger.error("Traceback: " + traceback.format_exc())
-    return jsonify(error="Internal Server Error"), 500
-
-
-@app.errorhandler(400)
-def invalid_json_format(e, response):
-    logger.error(f"JSON parsing error: {str(e)}")
-    logger.error("Invalid JSON content: " + response)
-    return jsonify(error="Invalid JSON content"), 400
 
 
 if __name__ == "__main__":
