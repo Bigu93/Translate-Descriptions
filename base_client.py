@@ -57,7 +57,10 @@ class BaseClient:
 
         log_line_pre = f"method={http_method}, url={full_url}, params={ep_params}"
         log_line_post = ", ".join(
-            (log_line_pre, "success={}, status_code={}, message={}")
+            (
+                log_line_pre,
+                "success={success}, status_code={status_code}, message={message}",
+            )
         )
 
         try:
@@ -83,7 +86,9 @@ class BaseClient:
 
         is_success = response.status_code == 200
         log_line = log_line_post.format(
-            is_success, response.status_code, response.reason
+            success=is_success,
+            status_code=response.status_code,
+            message=response.reason,
         )
 
         if is_success:
