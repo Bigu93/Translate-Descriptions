@@ -5,6 +5,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from utils import (
     calc_hash,
+    get_logger,
     parse_request_data,
     validate_request_data,
     process_translation_request,
@@ -32,7 +33,7 @@ app_test.errorhandler(500)(internal_server_error)
 app_test.errorhandler(400)(invalid_json_format)
 
 # Setup Logging
-logger = setup_logger()
+logger = get_logger("app")
 
 # OpenAI Client
 client = OpenAI(api_key=OPENAI_API_KEY)
