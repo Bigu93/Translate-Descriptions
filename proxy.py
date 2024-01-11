@@ -11,6 +11,7 @@ from utils import (
     process_translation_request,
     internal_server_error,
     invalid_json_format,
+    parse_product_data,
 )
 from config import (
     OPENAI_API_KEY,
@@ -96,6 +97,8 @@ def get_product_data(product_id):
         return jsonify({"error": "Product ID is required"}), 400
 
     shopid = request.args.get("shopid", default=0, type=int)
+    langid = request.args.get("langid", default="pol", type=str)
+
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
     product_api = ProductApi(BASE_URL, token, "v3")
@@ -108,7 +111,8 @@ def get_product_data(product_id):
         return jsonify({"error": str(e)}), 400
 
     if status_code == 200:
-        return jsonify(product_data)
+        data = parse_product_data(product_data, lang=langid)
+        return jsonify(data)
     else:
         return jsonify({"error": reason}), status_code
 

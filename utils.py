@@ -123,6 +123,25 @@ def parse_response_content(response_content):
             return None
 
 
+def parse_product_data(json_data, lang=None):
+    parsed_data = []
+
+    for product in json_data["results"]:
+        product_info = {
+            "productIdent": product["productIdent"],
+            "productDescriptionsLangData": [],
+            "productAuctionDescriptionsData": product.get(
+                "productAuctionDescriptionsData", []
+            ),
+        }
+
+    for lang_data in product["productDescriptionsLangData"]:
+        if lang is None or lang_data["langId"] == lang:
+            product_info["productDescriptionsLangData"].append(lang_data)
+
+    return parsed_data
+
+
 def internal_server_error(e):
     logger_server_error = get_logger("server_error")
     logger_server_error.error(f"Error in /proxy route: {str(e)}")
