@@ -11,7 +11,7 @@ class BaseClient:
         self,
         hostname: str,
         auth_token: str = "",
-        version: str = "v1",
+        version: str = "v3",
         ssl_verify: bool = True,
         logger: logging.Logger = None,
     ):
@@ -19,7 +19,7 @@ class BaseClient:
         Constructor for BaseClient class
         :param hostname: website url
         :param auth_token: authentication token
-        :param version: v1
+        :param version: v3
         :param ssl_verify: Normally set to True, but if having SSL/TLS cert validation issues, can turn off with False
         :param logger: (optional) If your app has a logger, pass it in here.
         """

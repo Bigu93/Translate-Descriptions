@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify, make_response
+from auth import Auth
+from product import ProductApi
 from flask_cors import CORS
 from openai import OpenAI
 from utils import (
@@ -16,6 +18,9 @@ from config import (
     VALID_API_KEY,
     ALLOWED_ORIGINS,
     ROUTES_WITHOUT_API_KEY,
+    CLIENT_SECRET,
+    CLIENT_USERNAME,
+    BASE_URL,
 )
 
 # Initialize Flask App
@@ -87,6 +92,15 @@ def proxy_request():
 @app_test.route("/")
 def hello_world():
     return "Cześć Butosklep!"
+
+
+@app_test.route("/product-data/<product_id>", methods=["GET"])
+def get_product_data(product_id):
+    auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+    token = auth.get_token()
+    product_api = ProductApi(BASE_URL, token, "v3")
+
+    params = {"product_id": product_id}
 
 
 if __name__ == "__main__":
