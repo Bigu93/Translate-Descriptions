@@ -100,7 +100,9 @@ def get_product_data(product_id):
     token = auth.get_token()
     product_api = ProductApi(BASE_URL, token, "v3")
 
-    status_code, reason, product_data = product_api.get_product_data(product_id)
+    status_code, reason, product_data = product_api.get_product_description(
+        product_id, 0
+    )
 
     if status_code == 200:
         return jsonify(product_data)
