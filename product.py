@@ -7,14 +7,14 @@ class ProductApi:
         self,
         hostname: str,
         auth_token: str,
-        ver: str = "v2",
+        ver: str,
         ssl_verify: bool = True,
         logger: logging.Logger = None,
     ):
         self._base_client = BaseClient(hostname, auth_token, ver, ssl_verify, logger)
 
     def get_product_description(self, id, shop_id):
-        result = self._base_client.post(
+        result = self._base_client.get(
             endpoint="products/descriptions?type=id&ids={id}&shopId={shop_id}"
         )
         return result
