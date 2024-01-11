@@ -101,7 +101,7 @@ def get_product_data(product_id):
     product_api = ProductApi(BASE_URL, token, "v3")
 
     status_code, reason, product_data = product_api.get_product_description(
-        product_id, 0
+        params=[product_id, 0]
     )
 
     if status_code == 200:
