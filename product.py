@@ -15,7 +15,6 @@ class ProductApi:
 
     def get_product_description(self, params):
         if not isinstance(params, (list, tuple)) or len(params) < 2:
-            # Handle the error appropriately
             raise ValueError(
                 "Invalid params: expected a list or tuple with at least two elements"
             )

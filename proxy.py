@@ -23,19 +23,15 @@ from config import (
     BASE_URL,
 )
 
-# Initialize Flask App
 app_test = Flask(__name__)
 app_test.config["CORS_HEADERS"] = "Content-Type"
 cors = CORS(app_test)
 
-# Use the decorators with your routes
 app_test.errorhandler(500)(internal_server_error)
 app_test.errorhandler(400)(invalid_json_format)
 
-# Setup Logging
 logger = get_logger("app")
 
-# OpenAI Client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -100,7 +96,6 @@ def get_product_data(product_id):
         return jsonify({"error": "Product ID is required"}), 400
 
     shopid = request.args.get("shopid", default=0, type=int)
-
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
     product_api = ProductApi(BASE_URL, token, "v3")

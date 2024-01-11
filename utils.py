@@ -18,7 +18,6 @@ def get_logger(name="__default__"):
     """
     Returns a logger with rotating file handler. Default name is '__default__'.
     """
-    # Set up Rotating File Handler
     handler = RotatingFileHandler(
         os.path.join("logs", "app.log"), maxBytes=10000, backupCount=3, encoding="utf-8"
     )
@@ -28,9 +27,8 @@ def get_logger(name="__default__"):
     )
     handler.setFormatter(formatter)
 
-    # Get the logger and add handler
     logger = logging.getLogger(name)
-    if not logger.handlers:  # Avoid adding multiple handlers to the same logger
+    if not logger.handlers:
         logger.addHandler(handler)
     return logger
 
@@ -121,55 +119,10 @@ def parse_response_content(response_content):
             json_str = response_content[json_start:json_end]
             return json.loads(json_str)
         except (ValueError, json.JSONDecodeError) as e:
-            # Handle cases where extraction or parsing fails
             print(f"Error in extracting or parsing JSON: {e}")
             return None
 
 
-def create_payload(product_ids: list[dict] = None, lang_id: str = None) -> dict:
-    payload = {
-        "params": {
-            "returnProducts": "active",
-            "returnElements": [
-                "code",
-                "note",
-                "category_name",
-                "retail_price",
-                "wholesale_price",
-                "minimal_price",
-                "pos_price",
-                "strikethrough_retail_price",
-                "last_purchase_price",
-                "weight",
-                "complex_notes",
-                "traits",
-                "discount",
-                "icon",
-                "icon_for_auctions",
-                "pictures",
-                "sizeschart_name",
-                "sizes",
-                "new_product",
-                "lang_data",
-                "productIndividualDescriptionsData",
-            ],
-            "resultsPage": 0,
-            "resultsLimit": 20,
-        }
-    }
-
-    if product_ids:
-        payload["params"]["productParams"] = [
-            {"productId": p_id} for p_id in product_ids
-        ]
-
-    if lang_id:
-        payload["params"]["productSearchingLangId"] = lang_id
-
-    return payload
-
-
-# Error handling decorators
 def internal_server_error(e):
     logger_server_error = get_logger("server_error")
     logger_server_error.error(f"Error in /proxy route: {str(e)}")
@@ -180,7 +133,6 @@ def internal_server_error(e):
 def invalid_json_format(e):
     logger_invalid_json = get_logger("logger_invalid_json")
     logger_invalid_json.error(f"JSON parsing error: {str(e)}")
-    # Assuming `response` is a string describing the error context
-    response = "Invalid JSON content"  # Update this as needed
+    response = "Invalid JSON content"
     logger_invalid_json.error(response)
     return jsonify(error=response), 400

@@ -1,14 +1,13 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("O_SECRET")
 ALLOWED_IPs = os.getenv("IPs")
 VALID_API_KEY = os.getenv("API_KEY")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
-ROUTES_WITHOUT_API_KEY = ["/", "/product-data"]
+ROUTES_WITHOUT_API_KEY = ["/"]
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
 CLIENT_USERNAME = os.getenv("IDOSELL_CLIENT_USERNAME")
 CLIENT_SECRET = os.getenv("IDOSELL_CLIENT_SECRET")
