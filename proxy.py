@@ -98,9 +98,8 @@ def hello_world():
 def get_product_data(product_id):
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
+    return token
     product_api = ProductApi(BASE_URL, token, "v3")
-
-    params = {"product_id": product_id}
 
 
 if __name__ == "__main__":
