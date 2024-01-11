@@ -96,13 +96,20 @@ def hello_world():
 
 @app_test.route("/product-data/<product_id>", methods=["GET"])
 def get_product_data(product_id):
+    # Validate product_id here. For example, check if it's not empty or in the correct format.
+    if not product_id:
+        return jsonify({"error": "Product ID is required"}), 400
+
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
     product_api = ProductApi(BASE_URL, token, "v3")
 
-    status_code, reason, product_data = product_api.get_product_description(
-        params=[product_id, 0]
-    )
+    try:
+        status_code, reason, product_data = product_api.get_product_description(
+            params=[product_id, 0]
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
     if status_code == 200:
         return jsonify(product_data)

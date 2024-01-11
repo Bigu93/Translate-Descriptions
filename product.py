@@ -14,7 +14,12 @@ class ProductApi:
         self._base_client = BaseClient(hostname, auth_token, ver, ssl_verify, logger)
 
     def get_product_description(self, params):
-        result = self._base_client.get(
-            endpoint="products/descriptions?type=id&ids={params[0]}&shopId={params[1]}",
-        )
+        if not isinstance(params, (list, tuple)) or len(params) < 2:
+            # Handle the error appropriately
+            raise ValueError(
+                "Invalid params: expected a list or tuple with at least two elements"
+            )
+
+        endpoint = f"products/descriptions?type=id&ids={params[0]}&shopId={params[1]}"
+        result = self._base_client.get(endpoint=endpoint)
         return result
