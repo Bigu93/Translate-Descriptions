@@ -13,6 +13,6 @@ class ProductApi:
     ):
         self._base_client = BaseClient(hostname, auth_token, ver, ssl_verify, logger)
 
-    def get_products(self, params):
+    def get_product_description(self, params):
         result = self._base_client.post(endpoint="products/descriptions", data=params)
-        return result
+        return result 

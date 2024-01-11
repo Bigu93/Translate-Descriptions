@@ -98,9 +98,14 @@ def hello_world():
 def get_product_data(product_id):
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
-    data = {"token": token}
-    return jsonify(data)
     product_api = ProductApi(BASE_URL, token, "v3")
+
+    status_code, reason, product_data = product_api.get_product_data(product_id)
+
+    if status_code == 200:
+        return jsonify(product_data)
+    else:
+        return jsonify({"error": reason}), status_code
 
 
 if __name__ == "__main__":
