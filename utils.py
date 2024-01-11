@@ -1,28 +1,37 @@
 from logging.handlers import RotatingFileHandler
 from flask import jsonify
-from config import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME
+from config import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME, LOG_LEVEL
 import logging
+import os
 import traceback
 import hashlib
 import json
 
 
-def setup_logger():
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+
+def get_logger(name="__default__"):
     """
-    Sets up and returns a logger with rotating file handler.
+    Returns a logger with rotating file handler. Default name is '__default__'.
     """
+    # Set up Rotating File Handler
     handler = RotatingFileHandler(
-        "record_debug.log", maxBytes=10000, backupCount=3, encoding="utf-8"
+        os.path.join("logs", "app.log"), maxBytes=10000, backupCount=3, encoding="utf-8"
     )
-    handler.setLevel(logging.ERROR)
+    handler.setLevel(getattr(logging, LOG_LEVEL))
     formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.ERROR)
-    logger.addHandler(handler)
+    # Get the logger and add handler
+    logger = logging.getLogger(name)
+    if not logger.handlers:  # Avoid adding multiple handlers to the same logger
+        logger.addHandler(handler)
     return logger
 
 
@@ -119,16 +128,16 @@ def parse_response_content(response_content):
 
 # Error handling decorators
 def internal_server_error(e):
-    logger = setup_logger()
-    logger.error(f"Error in /proxy route: {str(e)}")
-    logger.error("Traceback: " + traceback.format_exc())
+    logger_server_error = get_logger("server_error")
+    logger_server_error.error(f"Error in /proxy route: {str(e)}")
+    logger_server_error.error("Traceback: " + traceback.format_exc())
     return jsonify(error="Internal Server Error"), 500
 
 
 def invalid_json_format(e):
-    logger = setup_logger()
-    logger.error(f"JSON parsing error: {str(e)}")
+    logger_invalid_json = get_logger("logger_invalid_json")
+    logger_invalid_json.error(f"JSON parsing error: {str(e)}")
     # Assuming `response` is a string describing the error context
     response = "Invalid JSON content"  # Update this as needed
-    logger.error(response)
+    logger_invalid_json.error(response)
     return jsonify(error=response), 400
