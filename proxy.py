@@ -5,7 +5,6 @@ from flask_cors import CORS
 from openai import OpenAI
 from utils import (
     calc_hash,
-    setup_logger,
     parse_request_data,
     validate_request_data,
     process_translation_request,
