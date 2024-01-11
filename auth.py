@@ -53,8 +53,6 @@ class Auth:
 
         except requests.RequestException as e:
             self.logger.error(f"Error in authentication request: {e}")
-            raise IdoSellApiException(
-                f"API Error: {e.response.status_code} - {e.response.text}"
-            )
+            raise Exception(f"API Error: {e.response.status_code} - {e.response.text}")
             self.access_token = None
             self.token_expires = 0
