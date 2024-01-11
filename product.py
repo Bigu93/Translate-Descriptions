@@ -15,6 +15,7 @@ class ProductApi:
 
     def get_product_description(self, id, shop_id):
         result = self._base_client.get(
-            endpoint="products/descriptions?type=id&ids={id}&shopId={shop_id}"
+            endpoint="products/descriptions?type=id&ids={id}&shopId={shop_id}",
+            params=None,
         )
         return result
