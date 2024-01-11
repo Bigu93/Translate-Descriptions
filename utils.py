@@ -135,9 +135,9 @@ def parse_product_data(json_data, lang=None):
             ),
         }
 
-    for lang_data in product["productDescriptionsLangData"]:
-        if lang is None or lang_data["langId"] == lang:
-            product_info["productDescriptionsLangData"].append(lang_data)
+        for lang_data in product["productDescriptionsLangData"]:
+            if lang is None or lang_data["langId"] == lang:
+                product_info["productDescriptionsLangData"].append(lang_data)
 
     return parsed_data
 
