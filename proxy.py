@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, make_response
+from urllib.parse import unquote
 from auth import Auth
 from product import ProductApi
 from flask_cors import CORS
@@ -98,7 +99,8 @@ def get_product_data(product_id):
 
     shopid = request.args.get("shopid", default=0, type=int)
     langid = request.args.get("langid", default="pol", type=str)
-    fields_list = request.args.get("fields", default=["productName"], type=list)
+    fields_query = request.args.get("fields", default="productName", type=str)
+    fields_list = unquote(fields_query).split(",")
 
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
