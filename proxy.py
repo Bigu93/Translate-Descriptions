@@ -98,9 +98,14 @@ def get_product_data(product_id):
         return jsonify({"error": "Product ID is required"}), 400
 
     shopid = request.args.get("shopid", default=0, type=int)
+
     langid = request.args.get("langid", default="pol", type=str)
+    langid = None if langid.lower() == "all" else langid
+
     fields_query = request.args.get("fields", default="productName", type=str)
-    fields_list = unquote(fields_query).split(",")
+    fields_list = (
+        None if fields_query.lower() == "all" else unquote(fields_query).split(",")
+    )
 
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
