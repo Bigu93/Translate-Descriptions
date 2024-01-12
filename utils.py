@@ -127,24 +127,16 @@ def parse_product_data(json_data, lang=None, fields=None):
     parsed_data = []
 
     for product in json_data["results"]:
-        product_info = {
-            "productIdent": product["productIdent"],
-            "productDescriptionsLangData": [],
-        }
-
         for lang_data in product["productDescriptionsLangData"]:
             if lang is None or lang_data["langId"] == lang:
-                if fields is None:
-                    filtered_lang_data = lang_data
-                else:
-                    filtered_lang_data = {
-                        field: lang_data.get(field, None) for field in fields
-                    }
-                product_info["productDescriptionsLangData"].append(filtered_lang_data)
+                # Process each field in the fields list
+                for field in fields or lang_data.keys():
+                    if field in lang_data:
+                        country_code = lang_data["langId"]
+                        field_key = f"{field}-{country_code}"
+                        parsed_data.append({field_key: lang_data.get(field, None)})
 
-        parsed_data.append(product_info)
-
-    return parsed_data
+    return {"data": parsed_data}
 
 
 def internal_server_error(e):
