@@ -148,7 +148,7 @@ def parse_product_data(json_data, lang=None, fields=None):
             if lang_entry:
                 data_by_lang[current_lang].append(lang_entry)
 
-    return {[data_by_lang[lang] for lang in data_by_lang]}
+    return {"lang_data": [data_by_lang[lang] for lang in data_by_lang]}
 
 
 def internal_server_error(e):
