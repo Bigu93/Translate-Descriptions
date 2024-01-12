@@ -129,18 +129,27 @@ def parse_product_data(json_data, lang=None, fields=None):
     for product in json_data["results"]:
         product_info = {
             "productIdent": product["productIdent"],
-            "productDescriptionsLangData": [],
+            "productDescriptionsLangData": {},
         }
 
         for lang_data in product["productDescriptionsLangData"]:
-            if lang is None or lang_data["langId"] == lang:
+            current_lang = lang_data["langId"]
+
+            if lang is None or lang == "all" or current_lang == lang:
                 if fields is None:
                     filtered_lang_data = lang_data
                 else:
                     filtered_lang_data = {
                         field: lang_data.get(field, None) for field in fields
                     }
-                product_info["productDescriptionsLangData"].append(filtered_lang_data)
+
+                # Group by language
+                if current_lang not in product_info["productDescriptionsLangData"]:
+                    product_info["productDescriptionsLangData"][current_lang] = []
+
+                product_info["productDescriptionsLangData"][current_lang].append(
+                    filtered_lang_data
+                )
 
         parsed_data.append(product_info)
 
