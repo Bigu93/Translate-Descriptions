@@ -124,31 +124,27 @@ def parse_response_content(response_content):
 
 
 def parse_product_data(json_data, lang=None, fields=None):
-    data_by_lang = {}
+    parsed_data = []
 
     for product in json_data["results"]:
+        product_info = {
+            "productIdent": product["productIdent"],
+            "productDescriptionsLangData": [],
+        }
+
         for lang_data in product["productDescriptionsLangData"]:
-            current_lang = lang_data["langId"]
+            if lang is None or lang_data["langId"] == lang:
+                if fields is None:
+                    filtered_lang_data = lang_data
+                else:
+                    filtered_lang_data = {
+                        field: lang_data.get(field, None) for field in fields
+                    }
+                product_info["productDescriptionsLangData"].append(filtered_lang_data)
 
-            # Filter by language if a specific language is requested
-            if lang is not None and lang.lower() != "all" and current_lang != lang:
-                continue
+        parsed_data.append(product_info)
 
-            # Initialize language group if not already present
-            if current_lang not in data_by_lang:
-                data_by_lang[current_lang] = []
-
-            # Construct data for each field
-            lang_entry = {}
-            for field in fields or lang_data.keys():
-                if field in lang_data:
-                    field_key = f"{field}-{current_lang}"
-                    lang_entry[field_key] = lang_data.get(field, None)
-
-            if lang_entry:
-                data_by_lang[current_lang].append(lang_entry)
-
-    return {"lang_data": [data_by_lang[lang] for lang in data_by_lang]}
+    return parsed_data
 
 
 def internal_server_error(e):
