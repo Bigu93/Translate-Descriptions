@@ -123,21 +123,24 @@ def parse_response_content(response_content):
             return None
 
 
-def parse_product_data(json_data, lang=None):
+def parse_product_data(json_data, lang=None, fields=None):
     parsed_data = []
+
+    if fields is None:
+        fields = []  # Define default fields here
 
     for product in json_data["results"]:
         product_info = {
             "productIdent": product["productIdent"],
             "productDescriptionsLangData": [],
-            "productAuctionDescriptionsData": product.get(
-                "productAuctionDescriptionsData", []
-            ),
         }
 
         for lang_data in product["productDescriptionsLangData"]:
             if lang is None or lang_data["langId"] == lang:
-                product_info["productDescriptionsLangData"].append(lang_data)
+                filtered_lang_data = {
+                    field: lang_data.get(field, None) for field in fields
+                }
+                product_info["productDescriptionsLangData"].append(filtered_lang_data)
 
         parsed_data.append(product_info)
 
