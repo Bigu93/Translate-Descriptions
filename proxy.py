@@ -98,6 +98,7 @@ def get_product_data(product_id):
 
     shopid = request.args.get("shopid", default=0, type=int)
     langid = request.args.get("langid", default="pol", type=str)
+    fields_list = request.args.get("fields", default=["productName"], type=list)
 
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
@@ -111,7 +112,7 @@ def get_product_data(product_id):
         return jsonify({"error": str(e)}), 400
 
     if status_code == 200:
-        data = parse_product_data(product_data, lang=langid)
+        data = parse_product_data(product_data, lang=langid, fields=fields_list)
         return jsonify(data)
     else:
         return jsonify({"error": reason}), status_code
