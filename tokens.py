@@ -1,12 +1,13 @@
 import datetime
 import mysql.connector
 from mysql.connector import Error
+from config import DB_NAME, DB_USER, DB_PASS
 
 
 def create_db_connection():
     try:
         connection = mysql.connector.connect(
-            host="localhost", database="", user="", password=""
+            host="localhost", database=DB_NAME, user=DB_USER, password=DB_PASS
         )
 
         if connection.is_connected():

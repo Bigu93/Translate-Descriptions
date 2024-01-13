@@ -6,7 +6,6 @@ from tokens import store_token, is_token_valid
 from flask_cors import CORS
 from openai import OpenAI
 from utils import (
-    calc_hash,
     get_logger,
     parse_request_data,
     validate_request_data,
@@ -17,10 +16,7 @@ from utils import (
 )
 from config import (
     OPENAI_API_KEY,
-    ALLOWED_IPs,
-    VALID_API_KEY,
     ALLOWED_ORIGINS,
-    ALLOWED_REFERERS,
     CLIENT_SECRET,
     CLIENT_USERNAME,
     BASE_URL,
@@ -37,10 +33,6 @@ app_test.errorhandler(400)(invalid_json_format)
 logger = get_logger("app")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-def is_ip_allowed(client_ip_str):
-    return client_ip_str in ALLOWED_IPs
 
 
 @app_test.before_request

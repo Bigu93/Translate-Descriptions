@@ -4,7 +4,6 @@ from config import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME, LOG_LEVEL
 import logging
 import os
 import traceback
-import hashlib
 import json
 
 
@@ -98,15 +97,6 @@ def process_translation_request(
         invalid_json_format(e, response_content)
     except Exception as e:
         internal_server_error(e)
-
-
-def calc_hash(input):
-    """
-    Calculates and returns SHA256 hash of the input.
-    """
-    hash_method = hashlib.sha256()
-    hash_method.update(input.encode("utf-8"))
-    return hash_method.hexdigest()
 
 
 def parse_response_content(response_content):
