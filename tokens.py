@@ -17,29 +17,35 @@ def create_db_connection():
 
 
 def store_token(token):
-    connection = create_db_connection()
-    if connection:
-        cursor = connection.cursor()
-        expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-        query = "INSERT INTO api_tokens (token, expires_at) VALUES (%s, %s)"
-        cursor.execute(query, (token, expiry_time))
-        connection.commit()
-        cursor.close()
-        connection.close()
+    try:
+        connection = create_db_connection()
+        if connection:
+            cursor = connection.cursor()
+            expiry_time = (
+                datetime.datetime.now() + datetime.timedelta(hours=1)
+            ).strftime("%Y-%m-%d %H:%M:%S")
+            query = "INSERT INTO api_tokens (token, expires_at) VALUES (%s, %s)"
+            cursor.execute(query, (token, expiry_time))
+            connection.commit()
+            cursor.close()
+            connection.close()
+    except Error as e:
+        print("Error occured during storing the token:", e)
 
 
 def is_token_valid(token):
-    connection = create_db_connection()
-    if connection:
-        cursor = connection.cursor()
-        query = "SELECT expires_at FROM api_tokens WHERE token = %s"
-        cursor.execute(query, (token,))
-        row = cursor.fetchone()
-        cursor.close()
-        connection.close()
+    try:
+        connection = create_db_connection()
+        if connection:
+            cursor = connection.cursor()
+            query = "SELECT expires_at FROM api_tokens WHERE token = %s"
+            cursor.execute(query, (token,))
+            row = cursor.fetchone()
+            cursor.close()
+            connection.close()
 
-        if row and row[0] > datetime.datetime.now():
-            return True
-    return False
+            if row and row[0] > datetime.datetime.now():
+                return True
+        return False
+    except Error as e:
+        print("Error occured during token validation:", e)
