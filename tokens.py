@@ -7,7 +7,7 @@ from config import DB_NAME, DB_USER, DB_PASS
 def create_db_connection():
     try:
         connection = mysql.connector.connect(
-            host="localhost", database=DB_NAME, user=DB_USER, password=DB_PASS
+            host="127.0.0.1", database=DB_NAME, user=DB_USER, password=DB_PASS
         )
 
         if connection.is_connected():
