@@ -143,7 +143,6 @@ def parse_product_data(json_data, lang=None, fields=None):
                         field: lang_data.get(field, None) for field in fields
                     }
 
-                # Group by language
                 if current_lang not in product_info["productDescriptionsLangData"]:
                     product_info["productDescriptionsLangData"][current_lang] = []
 

@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, abort
 from urllib.parse import unquote
 from auth import Auth
 from product import ProductApi
+from tokens import store_token, is_token_valid
 from flask_cors import CORS
 from openai import OpenAI
 from utils import (
@@ -19,11 +20,12 @@ from config import (
     ALLOWED_IPs,
     VALID_API_KEY,
     ALLOWED_ORIGINS,
-    ROUTES_WITHOUT_API_KEY,
+    ALLOWED_REFERERS,
     CLIENT_SECRET,
     CLIENT_USERNAME,
     BASE_URL,
 )
+import secrets
 
 app_test = Flask(__name__)
 app_test.config["CORS_HEADERS"] = "Content-Type"
@@ -46,6 +48,7 @@ def restrict_access():
     if request.method == "OPTIONS":
         origin = request.headers.get("Origin")
         response = make_response()
+
         if origin in ALLOWED_ORIGINS:
             response.headers.add("Access-Control-Allow-Origin", origin)
         response.headers.add("Access-Control-Allow-Methods", "POST")
@@ -54,20 +57,25 @@ def restrict_access():
         )
         return response
 
-    client_ip = request.remote_addr
-    api_key = request.headers.get("Authorization")
-    hashed_key = calc_hash(VALID_API_KEY)
 
-    if request.path in ROUTES_WITHOUT_API_KEY:
-        if not is_ip_allowed(client_ip):
-            return "Access denied!", 403
-        return
-    if api_key != hashed_key:
-        return "Acces denied!", 403
+@app_test.route("/")
+def hello_world():
+    return "Cześć Butosklep!"
+
+
+@app_test.route("/generate-token", methods=["GET"])
+def generate_token():
+    token = secrets.token_hex(16)
+    store_token(token)
+    return jsonify({"token": token})
 
 
 @app_test.route("/proxy", methods=["GET", "POST"])
 def proxy_request():
+    token = request.headers.get("Authorization")
+    if not token or not is_token_valid(token):
+        abort(403)
+
     if request.method != "POST":
         return f"Unsupported method {request.method}", 405
 
@@ -87,13 +95,12 @@ def proxy_request():
     return response
 
 
-@app_test.route("/")
-def hello_world():
-    return "Cześć Butosklep!"
-
-
 @app_test.route("/product-data/<product_id>", methods=["GET"])
 def get_product_data(product_id):
+    token = request.headers.get("Authorization")
+    if not token or not is_token_valid(token):
+        abort(403)
+
     if not product_id:
         return jsonify({"error": "Product ID is required"}), 400
 
