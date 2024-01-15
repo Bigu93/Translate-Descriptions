@@ -131,6 +131,10 @@ def get_product_data(product_id):
         if "params" not in data or "products" not in data["params"]:
             return jsonify({"error": "Invalid data format"}), 400
 
+        auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+        token = auth.get_token()
+        product_api = ProductApi(BASE_URL, token, "v3")
+
         try:
             status_code, reason, product_data = product_api.set_product_description(
                 data=data
