@@ -132,9 +132,9 @@ def get_product_data(product_id):
             return jsonify({"error": "Invalid data format"}), 400
 
         try:
-            for product in data["params"]["products"]:
-                pass
-
+            status_code, reason, product_data = product_api.set_product_description(
+                data=data
+            )
             return jsonify({"message": "Product data updated successfully"}), 200
 
         except Exception as e:
