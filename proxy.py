@@ -139,7 +139,7 @@ def get_product_data(product_id):
             status_code, reason, product_data = product_api.set_product_description(
                 data=data
             )
-            return jsonify({"message": "Zaktualizawno!"}), 200
+            return jsonify({"message": "Zapisano!"}), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
