@@ -87,7 +87,7 @@ def proxy_request():
     return response
 
 
-@app_test.route("/product-data/<product_id>", methods=["GET", "PUT"])
+@app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
 def get_product_data(product_id):
     token = request.headers.get("Authorization")
     if not token or not is_token_valid(token):
@@ -123,7 +123,7 @@ def get_product_data(product_id):
         else:
             return jsonify({"error": reason}), status_code
 
-    if request.method == "PUT":
+    if request.method == "POST":
         data = request.json
         if not data:
             return jsonify({"error": "No data provided"}), 400
