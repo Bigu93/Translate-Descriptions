@@ -61,6 +61,9 @@ def process_translation_request(
     langs_list,
     client,
 ):
+    """
+    OpenAI translation function
+    """
     model = "gpt-3.5-turbo-1106"
     messages = []
 
@@ -100,6 +103,9 @@ def process_translation_request(
 
 
 def parse_response_content(response_content):
+    """
+    Validating response from OpenAI if it contains validate JSON
+    """
     try:
         return json.loads(response_content)
     except json.JSONDecodeError:
@@ -114,6 +120,9 @@ def parse_response_content(response_content):
 
 
 def parse_product_data(json_data, lang=None, fields=None):
+    """
+    Parsing JSON from IdoSell API response
+    """
     parsed_data = []
 
     for product in json_data["results"]:
@@ -146,6 +155,9 @@ def parse_product_data(json_data, lang=None, fields=None):
 
 
 def internal_server_error(e):
+    """
+    Handling server 500 response
+    """
     logger_server_error = get_logger("server_error")
     logger_server_error.error(f"Error in /proxy route: {str(e)}")
     logger_server_error.error("Traceback: " + traceback.format_exc())
@@ -153,6 +165,9 @@ def internal_server_error(e):
 
 
 def invalid_json_format(e):
+    """
+    Handling server 400 response
+    """
     logger_invalid_json = get_logger("logger_invalid_json")
     logger_invalid_json.error(f"JSON parsing error: {str(e)}")
     response = "Invalid JSON content"
