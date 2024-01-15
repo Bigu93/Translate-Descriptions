@@ -94,7 +94,7 @@ def get_product_data(product_id):
         abort(403)
 
     if not product_id:
-        return jsonify({"error": "Product ID is required"}), 400
+        return jsonify({"error": "Wymagane ID produktu!"}), 400
 
     if request.method == "GET":
         shopid = request.args.get("shopid", default=0, type=int)
@@ -126,10 +126,10 @@ def get_product_data(product_id):
     if request.method == "POST":
         data = request.json
         if not data:
-            return jsonify({"error": "No data provided"}), 400
+            return jsonify({"error": "Nie podano wysłano payloadu!"}), 400
 
         if "params" not in data or "products" not in data["params"]:
-            return jsonify({"error": "Invalid data format"}), 400
+            return jsonify({"error": "Niepoprawny format danych!"}), 400
 
         auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
         token = auth.get_token()
@@ -139,7 +139,7 @@ def get_product_data(product_id):
             status_code, reason, product_data = product_api.set_product_description(
                 data=data
             )
-            return jsonify({"message": "Product data updated successfully"}), 200
+            return jsonify({"message": "Zaktualizawno!"}), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
