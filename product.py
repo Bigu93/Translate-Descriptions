@@ -22,3 +22,12 @@ class ProductApi:
         endpoint = f"products/descriptions?type=id&ids={params[0]}&shopId={params[1]}"
         result = self._base_client.get(endpoint=endpoint)
         return result
+
+    def set_product_description(self, data):
+        if not isinstance(data, (list, tuple)) or len(data) < 3:
+            raise ValueError(
+                "Invalid params: expected a list or tuple with at least two elements"
+            )
+        endpoint = "products/descriptions"
+        payload = ""
+        result = self._base_client.put(endpoint=endpoint, data=data)

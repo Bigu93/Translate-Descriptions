@@ -87,7 +87,7 @@ def proxy_request():
     return response
 
 
-@app_test.route("/product-data/<product_id>", methods=["GET"])
+@app_test.route("/product-data/<product_id>", methods=["GET", "PUT"])
 def get_product_data(product_id):
     token = request.headers.get("Authorization")
     if not token or not is_token_valid(token):
@@ -96,32 +96,49 @@ def get_product_data(product_id):
     if not product_id:
         return jsonify({"error": "Product ID is required"}), 400
 
-    shopid = request.args.get("shopid", default=0, type=int)
+    if request.method == "GET":
+        shopid = request.args.get("shopid", default=0, type=int)
+        langid = request.args.get("langid", default="pol", type=str)
+        langid = None if langid.lower() == "all" else langid
 
-    langid = request.args.get("langid", default="pol", type=str)
-    langid = None if langid.lower() == "all" else langid
-
-    fields_query = request.args.get("fields", default="productName", type=str)
-    fields_list = (
-        None if fields_query.lower() == "all" else unquote(fields_query).split(",")
-    )
-
-    auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
-    token = auth.get_token()
-    product_api = ProductApi(BASE_URL, token, "v3")
-
-    try:
-        status_code, reason, product_data = product_api.get_product_description(
-            params=[product_id, shopid]
+        fields_query = request.args.get("fields", default="productName", type=str)
+        fields_list = (
+            None if fields_query.lower() == "all" else unquote(fields_query).split(",")
         )
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
 
-    if status_code == 200:
-        data = parse_product_data(product_data, lang=langid, fields=fields_list)
-        return jsonify(data)
-    else:
-        return jsonify({"error": reason}), status_code
+        auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+        token = auth.get_token()
+        product_api = ProductApi(BASE_URL, token, "v3")
+
+        try:
+            status_code, reason, product_data = product_api.get_product_description(
+                params=[product_id, shopid]
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+        if status_code == 200:
+            data = parse_product_data(product_data, lang=langid, fields=fields_list)
+            return jsonify(data)
+        else:
+            return jsonify({"error": reason}), status_code
+
+    if request.method == "PUT":
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        if "params" not in data or "products" not in data["params"]:
+            return jsonify({"error": "Invalid data format"}), 400
+
+        try:
+            for product in data["params"]["products"]:
+                pass
+
+            return jsonify({"message": "Product data updated successfully"}), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

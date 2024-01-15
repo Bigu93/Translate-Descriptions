@@ -40,6 +40,11 @@ class BaseClient:
             http_method="POST", endpoint=endpoint, ep_params=ep_params, data=data
         )
 
+    def put(self, endpoint: str, ep_params: dict = None, data: dict = None):
+        return self._send_request(
+            http_method="PUT", endpoint=endpoint, ep_params=ep_params, data=data
+        )
+
     def delete(self, endpoint: str, ep_params: dict = None, data: dict = None):
         return self._send_request(
             http_method="DELETE", endpoint=endpoint, ep_params=ep_params, data=data
