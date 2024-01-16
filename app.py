@@ -6,6 +6,7 @@ from tokens import is_token_valid, generate_token
 from proxy import handle_proxy_request
 from product import handle_product_data_request
 from translate import handle_translate_request
+from functools import wraps
 
 app_test = Flask(__name__)
 CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
@@ -14,6 +15,17 @@ logger = get_logger("app")
 
 app_test.errorhandler(500)(internal_server_error)
 app_test.errorhandler(400)(invalid_json_format)
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get("Authorization")
+        if not token or not is_token_valid(token):
+            abort(403)
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 @app_test.route("/")
@@ -27,26 +39,20 @@ def get_token():
 
 
 @app_test.route("/proxy", methods=["POST"])
+@token_required
 def proxy_request():
-    token = request.headers.get("Authorization")
-    if not token or not is_token_valid(token):
-        abort(403)
     return handle_proxy_request(request)
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
+@token_required
 def product_data(product_id):
-    token = request.headers.get("Authorization")
-    if not token or not is_token_valid(token):
-        abort(403)
     return handle_product_data_request(request, product_id)
 
 
 @app_test.route("/translate/<product_id>", methods=["POST"])
+@token_required
 def translate(product_id):
-    token = request.headers.get("Authorization")
-    if not token or not is_token_valid(token):
-        abort(403)
     return handle_translate_request(request, product_id)
 
 
