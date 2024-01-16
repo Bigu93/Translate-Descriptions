@@ -1,6 +1,14 @@
 from logging.handlers import RotatingFileHandler
 from flask import jsonify
-from config import TRANSLATE_PRODUCT_DESC, TRANSLATE_PRODUCT_NAME, LOG_LEVEL
+from config import (
+    PROMPT_PRODUCT_NAME,
+    PROMPT_PRODUCT_DESC,
+    PROMPT_META_TITLE,
+    PROMPT_META_DESC,
+    PROMPT_KEYWORDS,
+    PROMPT_ALL,
+    LOG_LEVEL,
+)
 import logging
 import os
 import traceback
@@ -11,6 +19,15 @@ logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
+TRANSLATE_TYPES = {
+    "name": PROMPT_PRODUCT_NAME,
+    "description": PROMPT_PRODUCT_DESC,
+    "meta_title": PROMPT_META_TITLE,
+    "meta_description": PROMPT_META_DESC,
+    "keywords": PROMPT_KEYWORDS,
+    "all": PROMPT_ALL,
+}
 
 
 def get_logger(name="__default__"):
@@ -32,23 +49,23 @@ def get_logger(name="__default__"):
     return logger
 
 
-def parse_request_data(request_data):
+def extract_request_data(request_data):
     """
     Extracts and returns user input, translate type, and language list from request data.
     """
-    user_input = request_data.get("userPrompt")
-    translate_type = request_data.get("translateType")
+    text_to_translate = request_data.get("text_to_translate")
+    translate_type = request_data.get("translate_type")
     langs_list = request_data.get("languages")
-    return user_input, translate_type, langs_list
+    return text_to_translate, translate_type, langs_list
 
 
-def validate_request_data(user_input, translate_type, langs_list):
+def validate_request_data(text_to_translate, translate_type, langs_list):
     """
     Validates request data for translation request.
     """
     if (
-        translate_type not in ["name", "description"]
-        or not user_input
+        translate_type not in TRANSLATE_TYPES.keys()
+        or not text_to_translate
         or not langs_list
     ):
         return False
@@ -56,7 +73,7 @@ def validate_request_data(user_input, translate_type, langs_list):
 
 
 def process_translation_request(
-    user_input,
+    text_to_translate,
     translate_type,
     langs_list,
     client,
@@ -67,10 +84,8 @@ def process_translation_request(
     model = "gpt-3.5-turbo-1106"
     messages = []
 
-    if translate_type == "description":
-        prompt_content = TRANSLATE_PRODUCT_DESC
-    elif translate_type == "name":
-        prompt_content = TRANSLATE_PRODUCT_NAME
+    if translate_type in TRANSLATE_TYPES.keys():
+        prompt_content = TRANSLATE_TYPES[translate_type]
     else:
         return (
             "Coś poszło nie tak :(",
@@ -81,7 +96,7 @@ def process_translation_request(
     messages.append(
         {
             "role": "user",
-            "content": f"[{user_input}] Langs:[{','.join(langs_list)}]",
+            "content": f"[{text_to_translate}] Langs:[{','.join(langs_list)}]",
         }
     )
     try:

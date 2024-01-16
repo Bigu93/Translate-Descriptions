@@ -7,7 +7,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from utils import (
     get_logger,
-    parse_request_data,
+    extract_request_data,
     validate_request_data,
     process_translation_request,
     internal_server_error,
@@ -62,7 +62,7 @@ def generate_token():
     return jsonify({"token": token})
 
 
-@app_test.route("/proxy", methods=["GET", "POST"])
+@app_test.route("/proxy", methods=["POST"])
 def proxy_request():
     token = request.headers.get("Authorization")
     if not token or not is_token_valid(token):
@@ -72,7 +72,7 @@ def proxy_request():
         return f"Unsupported method {request.method}", 405
 
     request_data = request.get_json()
-    user_input, translate_type, langs_list = parse_request_data(request_data)
+    user_input, translate_type, langs_list = extract_request_data(request_data)
 
     if not validate_request_data(user_input, translate_type, langs_list):
         return "Invalid request data", 400
@@ -140,6 +140,33 @@ def get_product_data(product_id):
                 data=data
             )
             return jsonify({"message": "Zapisano!"}), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+
+@app_test.route("/translate/<product_id>", methods=["POST"])
+def translate(product_id):
+    token = request.headers.get("Authorization")
+    if not token or not is_token_valid(token):
+        abort(403)
+
+    if not product_id:
+        return jsonify({"error": "Wymagane ID produktu!"}), 400
+
+    if request.method != "POST":
+        return jsonify({"error": "Nie wspierana metoda!"}), 400
+
+    if request.method == "POST":
+        data = request.json
+        if not data:
+            return jsonify({"error": "Nie podano wysłano payloadu!"}), 400
+
+        if "params" not in data or "products" not in data["params"]:
+            return jsonify({"error": "Niepoprawny format danych!"}), 400
+
+        try:
+            return jsonify(data), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
