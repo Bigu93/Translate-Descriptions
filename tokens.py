@@ -1,6 +1,8 @@
 import datetime
 import mysql.connector
+import secrets
 from mysql.connector import Error
+from flask import jsonify
 from config import DB_NAME, DB_USER, DB_PASS
 
 
@@ -58,3 +60,12 @@ def is_token_valid(token):
         return False
     except Error as e:
         print("Error occured during token validation:", e)
+
+
+def generate_token(request):
+    if request.method != "GET":
+        return f"Unsupported method {request.method}", 405
+
+    token = secrets.token_hex(16)
+    store_token(token)
+    return jsonify({"token": token})
