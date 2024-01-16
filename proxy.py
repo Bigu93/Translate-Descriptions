@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response, abort
 from urllib.parse import unquote
-from auth import Auth
-from product import ProductApi
+from api.auth import Auth
+from api.products_info import ProductApi
 from tokens import store_token, is_token_valid
 from flask_cors import CORS
 from openai import OpenAI
@@ -88,7 +88,7 @@ def proxy_request():
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-def get_product_data(product_id):
+def product_data(product_id):
     token = request.headers.get("Authorization")
     if not token or not is_token_valid(token):
         abort(403)
