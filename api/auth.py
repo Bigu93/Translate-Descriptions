@@ -1,7 +1,7 @@
 import requests
 import time
 import base64
-from ..utils import get_logger
+from utils import get_logger
 
 
 class Auth:
