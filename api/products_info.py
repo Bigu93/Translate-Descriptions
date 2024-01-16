@@ -1,5 +1,5 @@
 import logging
-from base_client import BaseClient
+from api.base_client import BaseClient
 
 
 class ProductApi:
