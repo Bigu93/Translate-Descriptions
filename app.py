@@ -6,6 +6,7 @@ from tokens import is_token_valid, generate_token
 from proxy import handle_proxy_request
 from product import handle_product_data_request
 from translate import handle_translate_request
+from vies import handle_vies_request
 from functools import wraps
 
 app_test = Flask(__name__)
@@ -42,6 +43,11 @@ def get_token():
 @token_required
 def proxy_request():
     return handle_proxy_request(request)
+
+
+@app_test.route("/vies", methods=["POST"])
+def vies_validation():
+    return handle_vies_request(request)
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
