@@ -1,5 +1,5 @@
 from flask import jsonify
-from zeep import Client
+from zeep import Client, exceptions
 from config import VIES_WSDL
 
 
@@ -29,8 +29,22 @@ def handle_vies_request(request):
 
 def validate_vat(country_code, vat_number):
     client = Client(VIES_WSDL)
-    try:
-        result = client.service.checkVat(countryCode=country_code, vatNumber=vat_number)
-        return {"valid": result.valid, "name": result.name, "address": result.address}
-    except Exception as e:
-        return {"error": str(e)}
+    attempts = 0
+    max_attempts = 3
+
+    while attempts < max_attempts:
+        try:
+            result = client.service.checkVat(
+                countryCode=country_code, vatNumber=vat_number
+            )
+            return {
+                "valid": result.valid,
+                "name": result.name,
+                "address": result.address,
+            }
+        except exceptions.Fault as fault:
+            return {"error": str(fault)}
+        except Exception as e:
+            attempts += 1
+            if attempts == max_attempts:
+                return {"error": str(e)}
