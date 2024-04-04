@@ -57,6 +57,7 @@ def product_data(product_id):
 
 
 @app_test.route("/translate", methods=["POST"])
+@token_required
 def translate():
     return handle_translate_request(request)
 
