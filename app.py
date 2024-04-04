@@ -62,4 +62,4 @@ def translate():
 
 
 if __name__ == "__main__":
-    app_test.run(host="0.0.0.0", port=1234)
+    app_test.run(host="0.0.0.0", port=6000)
