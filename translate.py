@@ -102,6 +102,7 @@ def handle_translate_request(request):
             return jsonify(updated_data), 200
 
         except Exception as e:
+            print("error: ", str(e))
             return jsonify({"error": str(e)}), 500
 
 
@@ -149,7 +150,6 @@ def translate_text(text, target_languages, content_type, category):
             "content": f"[{text}] Langs:[{','.join(target_languages)}] Category:[{category}]",
         },
     ]
-    print(messages)
 
     try:
         response = CLIENT.chat.completions.create(
