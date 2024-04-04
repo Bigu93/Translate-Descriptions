@@ -46,7 +46,7 @@ def handle_product_data_request(request, product_id):
     if request.method == "POST":
         data = request.json
         if not data:
-            return jsonify({"error": "Nie podano wysłano payloadu!"}), 400
+            return jsonify({"error": "Nie podano payloadu!"}), 400
 
         if "params" not in data or "products" not in data["params"]:
             return jsonify({"error": "Niepoprawny format danych!"}), 400

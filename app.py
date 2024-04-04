@@ -56,11 +56,10 @@ def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
 
-@app_test.route("/translate/<product_id>", methods=["POST"])
-@token_required
-def translate(product_id):
-    return handle_translate_request(request, product_id)
+@app_test.route("/translate", methods=["POST"])
+def translate():
+    return handle_translate_request(request)
 
 
 if __name__ == "__main__":
-    app_test.run(host="0.0.0.0", port=6000)
+    app_test.run(host="0.0.0.0", port=1234)

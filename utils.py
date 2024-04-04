@@ -6,7 +6,6 @@ from config import (
     PROMPT_META_TITLE,
     PROMPT_META_DESC,
     PROMPT_KEYWORDS,
-    PROMPT_ALL,
     LOG_LEVEL,
 )
 import logging
@@ -26,7 +25,6 @@ TRANSLATE_TYPES = {
     "meta_title": PROMPT_META_TITLE,
     "meta_description": PROMPT_META_DESC,
     "keywords": PROMPT_KEYWORDS,
-    "all": PROMPT_ALL,
 }
 
 
@@ -117,18 +115,48 @@ def process_translation_request(
         internal_server_error(e)
 
 
+def escape_single_quotes(value):
+    """
+    Escape single quotes in a string value, ensuring valid JSON format.
+    """
+    return value.replace("'", "\\'")
+
+
+def ensure_quotes_and_escape(json_obj):
+    """
+    Recursively ensure all keys and values are correctly quoted and single quotes in values are escaped.
+    This function operates on the parsed JSON object (dict/list).
+    """
+    if isinstance(json_obj, dict):
+        return {
+            ensure_quotes_and_escape(k): ensure_quotes_and_escape(v)
+            for k, v in json_obj.items()
+        }
+    elif isinstance(json_obj, list):
+        return [ensure_quotes_and_escape(element) for element in json_obj]
+    elif isinstance(json_obj, str):
+        return escape_single_quotes(json_obj)
+    else:
+        return json_obj
+
+
 def parse_response_content(response_content):
     """
-    Validating response from OpenAI if it contains validate JSON
+    Validating and parsing the response from OpenAI, ensuring all keys and values are enclosed in double quotes,
+    and escaping single quotes in values.
     """
     try:
-        return json.loads(response_content)
+        parsed_json = json.loads(response_content)
+        corrected_json = ensure_quotes_and_escape(parsed_json)
+        return corrected_json
     except json.JSONDecodeError:
         try:
             json_start = response_content.index("{")
             json_end = response_content.rindex("}") + 1
             json_str = response_content[json_start:json_end]
-            return json.loads(json_str)
+            parsed_json = json.loads(json_str)
+            corrected_json = ensure_quotes_and_escape(parsed_json)
+            return corrected_json
         except (ValueError, json.JSONDecodeError) as e:
             print(f"Error in extracting or parsing JSON: {e}")
             return None
