@@ -4,8 +4,14 @@ from config import ALLOWED_ORIGINS
 from utils import get_logger, internal_server_error, invalid_json_format
 from tokens import is_token_valid, generate_token
 from proxy import handle_proxy_request
-from product import handle_product_data_request
+from product import (
+    handle_product_data_request,
+    handle_product_info_request,
+    handle_product_full_info_request,
+)
 from translate import handle_translate_request
+from images import handle_images_request
+from generate import handle_generate_description
 from vies import handle_vies_request
 from functools import wraps
 
@@ -31,7 +37,7 @@ def token_required(f):
 
 @app_test.route("/")
 def hello_world():
-    return "Cześć Butosklep!"
+    return "Hello Butosklep!"
 
 
 @app_test.route("/generate-token", methods=["GET"])
@@ -56,10 +62,30 @@ def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
 
+@app_test.route("/product-info/<product_id>", methods=["GET"])
+def product_info(product_id):
+    return handle_product_info_request(request, product_id)
+
+
+@app_test.route("/product-full-info/<product_id>", methods=["GET"])
+def product_full_info(product_id):
+    return handle_product_full_info_request(request, product_id)
+
+
 @app_test.route("/translate", methods=["POST"])
 def translate():
     return handle_translate_request(request)
 
 
+@app_test.route("/images/<product_id>", methods=["GET"])
+def get_images(product_id):
+    return handle_images_request(request, product_id)
+
+
+@app_test.route("/generate-description", methods=["POST"])
+def generate_description():
+    return handle_generate_description(request)
+
+
 if __name__ == "__main__":
-    app_test.run(host="0.0.0.0", port=6000)
+    app_test.run(host="0.0.0.0", port=31773)

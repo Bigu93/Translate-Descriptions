@@ -11,6 +11,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def handle_proxy_request(request):
+    """
+    Handler for translations.
+    """
     if request.method != "POST":
         return f"Unsupported method {request.method}", 405
 

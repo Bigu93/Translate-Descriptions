@@ -8,6 +8,12 @@ class Auth:
     BUFFER_TIME = 60  # seconds
 
     def __init__(self, client_username, client_secret, base_url):
+        """
+        Constructor for Auth class
+        :param client_username: panel api username
+        :param client_secret: panel api secret
+        :param base_url: url for api gateway
+        """
         self.logger = get_logger(self.__class__.__name__)
         self.encoded_credentials = self.encode_credentials(
             client_username, client_secret

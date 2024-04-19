@@ -55,6 +55,7 @@ Expected Output Format:
 }
 Replace "Language1", "Language2", etc., with the actual languages identified from user input.
 Replace "MetaTitle1", "MetaTitle2", etc., with the actual created content."""
+
 PROMPT_META_DESC = """Given a detailed product description and category in Polish that outlines key features, benefits, and unique selling points of the product, create a concise, engaging meta description in specified languages that captures the essence of the product. The description should be optimized for search engines and designed to attract potential customers. It should contain max 140 characters. The category name should be included in the translated meta description as a part of main sentence. Focus on highlighting the product's most distinctive attributes, ensuring the meta description is appealing and informative.
 Instructions:
 1. Translate the main elements of the Polish product description and category name into specified languages, ensuring accuracy and natural language use.
@@ -70,6 +71,7 @@ Expected Output Format:
 }
 Replace "Language1", "Language2", etc., with the actual languages identified from user input.
 Replace "MetaDescription1", "MetaDescription2", etc., with the actual the created content. """
+
 PROMPT_KEYWORDS = """Given a product description and category in polish language that includes various details about the item, generate a translated list of 6 relevant keywords for specified language list that summarize the primary features and attributes of the product. The category name should be translated and included as a primary keyword. Exclude any reference to size charts or specific sizing instructions, focusing instead on the material, design, and functional aspects of the product described.
 Instructions:
 1. Carefully read the provided Polish description and category name to identify key aspects and characteristics of the product, excluding any sections that discuss size charts or sizing instructions.
@@ -81,3 +83,16 @@ Expected Output Format:
 "Language2": "keyword1 keyword2 keyword3 keyword4 keyword5 keyword6",
 }
 Replace "keyword1", "keyword2", etc., with the actual keywords identified from the description. Replace "Language1", "Language2", etc., with the actual languages identified from user input."""
+
+PROMPT_GENERATE = """Na podstawie przesłanego zdjęcia lub kilku zdjęć, wygeneruj opis produktu dla sklepu internetowego. Skup się tylko na produkcie, nie opisuj dodatkowych akcesoriów, które ma modelka. Poniżej kilka przykładowych opisów:###
+Opis 1: 
+Półbuty damskie marki Vinceza to połączenie elegancji i wygody. Wykonane ze skóry naturalnej, zapewniają trwałość i komfort noszenia. Słupkowy obcas zapewnia stabilność podczas chodzenia. Sznurowanie pozwala na idealne dopasowanie do stopy. Te półbuty są doskonałym wyborem na wiele okazji, dodając Twojej stylizacji wyrafinowanego charakteru.
+Opis 2:
+Damskie trampki marki Big Star. Wykonane z wysokiej jakości materiału tekstylnego. Cholewka sięgająca za kostkę dodaje stabilności, co jest szczególnie ważne podczas długich spacerów czy aktywności na świeżym powietrzu. W tych modnych trampkach będziesz czuć się swobodnie i stylowo jednocześnie!
+Opis 3:
+Sandały płaskie damskie od marki Big Star to wyjątkowe połączenie stylu i wygody. Wykonane z wysokiej jakości eko skóry, są nie tylko trwałe, ale także przyjazne dla środowiska. Przeplatające się paseczki dodają subtelnego uroku i sprawiają, że prezentują się niezwykle stylowo. Doskonale sprawdzą się w letnich stylizacjach, dodając im lekkości i swobodnego charakteru. Idealne zarówno na spacer po plaży, jak i na relaksujące spacery po mieście.
+Opis 4:
+Kapcie damskie osadzone na grubej podeszwie zapewniają stabilność i wygodę podczas poruszania się po domu. Miękkie futerko sprawia, że stopy są otulone. Te kapcie są nie tylko praktyczne, ale także stylowe, doskonale komponując się z domowymi strojami. Idealne na wieczorne leniuchowanie lub przytulny wieczór przy kominku.
+###
+Zwróć tylko opis, nic więcej.
+"""

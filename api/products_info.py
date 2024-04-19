@@ -23,6 +23,35 @@ class ProductApi:
         result = self._base_client.get(endpoint=endpoint)
         return result
 
+    def get_product_info_with_sizecode(self, params):
+        if not isinstance(params, (list, tuple)) or len(params) < 2:
+            raise ValueError(
+                "Invalid params: expected a list or tuple with at least two elements"
+            )
+
+        endpoint = f"products/SKUbyBarcode?productIndices={params[0]}-{params[1]}"
+        result = self._base_client.get(endpoint=endpoint)
+        return result
+
+    def get_product_full_info_with_sizecode(self, params):
+        if not isinstance(params, (list, tuple)) or len(params) < 2:
+            raise ValueError(
+                "Invalid params: expected a list or tuple with at least two elements"
+            )
+
+        endpoint = f"products/products?productIds={params[0]}-{params[1]}"
+        result = self._base_client.get(endpoint=endpoint)
+        return result
+
+    def get_product_images(self, data):
+        if not data:
+            raise Exception("You need to provide data for a product")
+
+        endpoint = "products/products/get"
+        payload = data
+        result = self._base_client.post(endpoint=endpoint, data=payload)
+        return result
+
     def set_product_description(self, data):
         endpoint = "products/descriptions"
         payload = data

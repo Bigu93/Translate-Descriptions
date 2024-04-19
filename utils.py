@@ -54,6 +54,7 @@ def extract_request_data(request_data):
     text_to_translate = request_data.get("text_to_translate")
     translate_type = request_data.get("translate_type")
     langs_list = request_data.get("languages")
+
     return text_to_translate, translate_type, langs_list
 
 
@@ -77,7 +78,7 @@ def process_translation_request(
     client,
 ):
     """
-    OpenAI translation function
+    OpenAI translation function.
     """
     model = "gpt-3.5-turbo-1106"
     messages = []
@@ -86,7 +87,7 @@ def process_translation_request(
         prompt_content = TRANSLATE_TYPES[translate_type]
     else:
         return (
-            "Coś poszło nie tak :(",
+            "Something went wrong",
             400,
         )
 
@@ -164,7 +165,7 @@ def parse_response_content(response_content):
 
 def parse_product_data(json_data, lang=None, fields=None):
     """
-    Parsing JSON from IdoSell API response
+    Parsing JSON from IdoSell API response.
     """
     parsed_data = []
 
@@ -197,19 +198,175 @@ def parse_product_data(json_data, lang=None, fields=None):
     return parsed_data
 
 
+def parse_product_images(json_data):
+    """
+    Parsing JSON from IdoSell API response.
+    """
+    results = json_data.get("results", [])
+
+    extracted_data = []
+    for result in results:
+        product_images = result.get("productImages", [])
+        for image in product_images:
+            extracted_data.append(
+                {
+                    "productImageMediumUrl": image.get("productImageMediumUrl"),
+                    "productImageId": image.get("productImageId"),
+                }
+            )
+
+    return jsonify(extracted_data)
+
+
+def parse_product_info(json_data):
+    """
+    Parsing JSON about product info from IdoSell API response.
+    """
+    results = json_data.get("results", [])
+
+    extracted_data = []
+    for result in results:
+        found_by = result.get("foundByIndex", [])
+        product_info_list = result.get("productSkuList", [])
+        for info in product_info_list:
+            extracted_data.append(
+                {
+                    "foundBy": found_by,
+                    "productId": info.get("productId"),
+                    "productName": info.get("productName"),
+                    "sizeId": info.get("sizeId"),
+                    "sizeName": info.get("sizeName"),
+                    "codeProducer": info.get("codeProducer"),
+                    "weight": info.get("weight"),
+                    "quantity": sum(q["quantity"] for q in info.get("quantities", [])),
+                    "producerName": info.get("producerName"),
+                    "delivererName": info.get("delivererName"),
+                    "productNote": info.get("productNote"),
+                    "germanProductName": next(
+                        (
+                            desc["name"]
+                            for desc in info.get("productDescriptionsLangData")
+                            if desc["langId"] == "ger"
+                        ),
+                        None,
+                    ),
+                    "productRetailPrice": next(
+                        (
+                            price["productRetailPrice"]
+                            for price in info.get("productPrices")
+                            if price["shopName"] == "butosklep.pl"
+                        )
+                    ),
+                    "productWholesalePrice": next(
+                        (
+                            price["productWholesalePrice"]
+                            for price in info.get("productPrices")
+                            if price["shopName"] == "butosklep.pl"
+                        )
+                    ),
+                    "productIconSmallUrl": info.get("productIcon", {}).get(
+                        "productIconSmallUrl"
+                    ),
+                    "productIconLargeUrl": info.get("productIcon", {}).get(
+                        "productIconLargeUrl"
+                    ),
+                    "langProductNames": {
+                        desc["langId"]: desc["name"]
+                        for desc in info.get("productDescriptionsLangData")
+                    },
+                }
+            )
+
+    return extracted_data
+
+
+def parse_full_product_info(json_data):
+    """
+    Parsing JSON about full product info from IdoSell API response.
+    """
+    results = json_data.get("results", [])
+
+    extracted_data = []
+    for result in results:
+        extracted_data.append(
+            {
+                "productId": result.get("productId"),
+                "productDisplayedCode": result.get("productDisplayedCode"),
+                "producerName": result.get("producerName"),
+                "sizeChartId": result.get("sizeChartId"),
+                "sizeChartName": result.get("sizeChartName"),
+                "categoryName": result.get("categoryName"),
+                "categoryIdoSellPath": result.get("categoryIdoSellPath"),
+                "productIconLargeUrl": result.get("productIcon", {}).get(
+                    "productIconLargeUrl"
+                ),
+                "productAuctionIconLargeUrl": f"""https://butosklep.pl/{result.get("productAuctionIcon", {}).get(
+                    "productAuctionIconLargeUrl"
+                )}""",
+                "productSmallImages": {
+                    index + 1: image["productImageSmallUrl"]
+                    for index, image in enumerate(result.get("productImages", []))
+                },
+                "productMediumImages": {
+                    index + 1: image["productImageMediumUrl"]
+                    for index, image in enumerate(result.get("productImages", []))
+                },
+                "productLargeImages": {
+                    index + 1: image["productImageLargeUrl"]
+                    for index, image in enumerate(result.get("productImages", []))
+                },
+                "productAddingTime": result.get("productAddingTime"),
+                "productPriceChangedTime": result.get("productPriceChangedTime"),
+                "productInNew": result.get("productInNew"),
+                "productRetailPrice": result.get("productRetailPrice"),
+                "productWholesalePrice": result.get("productWholesalePrice"),
+                "productMinimalPrice": result.get("productMinimalPrice"),
+                "productParameters": {
+                    next(
+                        (
+                            desc["parameterName"]
+                            for desc in param["parameterDescriptionsLangData"]
+                            if desc["langId"] == "pol"
+                        ),
+                        None,
+                    ): next(
+                        (
+                            val_desc["parameterValueName"]
+                            for value in param["parameterValues"]
+                            for val_desc in value["parameterValueDescriptionsLangData"]
+                            if val_desc["langId"] == "pol"
+                        ),
+                        None,
+                    )
+                    for param in result.get("productParameters")
+                    if next(
+                        (
+                            desc["parameterName"]
+                            for desc in param["parameterDescriptionsLangData"]
+                            if desc["langId"] == "pol"
+                        ),
+                        None,
+                    )
+                },
+            }
+        )
+
+    return extracted_data
+
+
 def internal_server_error(e):
     """
-    Handling server 500 response
+    Handling server 500 response.
     """
     logger_server_error = get_logger("server_error")
-    logger_server_error.error(f"Error in /proxy route: {str(e)}")
+    logger_server_error.error(f"Error: {str(e)}")
     logger_server_error.error("Traceback: " + traceback.format_exc())
     return jsonify(error="Internal Server Error"), 500
 
 
 def invalid_json_format(e):
     """
-    Handling server 400 response
+    Handling server 400 response.
     """
     logger_invalid_json = get_logger("logger_invalid_json")
     logger_invalid_json.error(f"JSON parsing error: {str(e)}")

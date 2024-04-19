@@ -8,7 +8,7 @@ from config import DB_NAME, DB_USER, DB_PASS
 
 def create_db_connection():
     """
-    Create connection to local database
+    Create connection to local database.
     """
     try:
         connection = mysql.connector.connect(
@@ -23,7 +23,7 @@ def create_db_connection():
 
 def store_token(token):
     """
-    Store generated token in database with 1 hour expiry time
+    Store generated token in database with 1 hour expiry time.
     """
     try:
         connection = create_db_connection()
@@ -43,7 +43,7 @@ def store_token(token):
 
 def is_token_valid(token):
     """
-    Checking if token from request is in database
+    Checking if token from request is in database.
     """
     try:
         connection = create_db_connection()

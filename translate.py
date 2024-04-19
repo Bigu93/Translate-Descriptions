@@ -43,17 +43,20 @@ CLIENT = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def handle_translate_request(request):
+    """
+    Handler for translation request.
+    """
     if request.method != "POST":
-        return jsonify({"error": "Nie wspierana metoda!"}), 400
+        return jsonify({"error": "Unsupported method!"}), 400
 
     if request.method == "POST":
         data = request.json
 
         if not data:
-            return jsonify({"error": "Nie podano payloadu!"}), 400
+            return jsonify({"error": "Empty payload!"}), 400
 
         if "params" not in data or "products" not in data["params"]:
-            return jsonify({"error": "Niepoprawny format danych!"}), 400
+            return jsonify({"error": "Unsupported JSON structure!"}), 400
 
         try:
             target_languages = get_target_languages(data)
@@ -107,7 +110,9 @@ def handle_translate_request(request):
 
 
 def extract_polish_content(data):
-    """Extract Polish content and its location within the JSON."""
+    """
+    Extract Polish content and its location within the JSON.
+    """
     polish_content = []
     for product in data["params"]["products"]:
         for description in product["productDescriptionsLangData"]:
@@ -127,7 +132,9 @@ def extract_polish_content(data):
 
 
 def get_target_languages(data):
-    """Extract a unique set of languages to translate to, excluding 'pol', and map them to full language names."""
+    """
+    Extract a unique set of languages to translate to, excluding 'pol', and map them to full language names.
+    """
     languages = set()
     for product in data["params"]["products"]:
         for description in product["productDescriptionsLangData"]:
@@ -138,7 +145,9 @@ def get_target_languages(data):
 
 
 def translate_text(text, target_languages, content_type, category):
-    """Translate text to the target language using an API."""
+    """
+    Translate text to the target language using an API.
+    """
     model = "gpt-3.5-turbo-1106"
     messages = []
     system_prompt = TRANSLATE_TYPES.get(content_type, "Invalid content_type")
@@ -168,7 +177,9 @@ def translate_text(text, target_languages, content_type, category):
 
 
 def update_json(data, translations):
-    """Update the original JSON structure with the translations."""
+    """
+    Update the original JSON structure with the translations.
+    """
     for translation in translations:
         product, original_description = translation["location"]
         for target_lang, translated_texts in translation["translated_texts"].items():
