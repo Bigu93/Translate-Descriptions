@@ -83,6 +83,7 @@ def get_images(product_id):
 
 
 @app_test.route("/generate-description", methods=["POST"])
+@token_required
 def generate_description():
     return handle_generate_description(request)
 
