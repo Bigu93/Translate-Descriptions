@@ -89,4 +89,4 @@ def generate_description():
 
 
 if __name__ == "__main__":
-    app_test.run(host="0.0.0.0", port=31773)
+    app_test.run(host="0.0.0.0", port=5000)
