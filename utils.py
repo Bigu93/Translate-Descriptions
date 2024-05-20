@@ -52,8 +52,9 @@ def extract_request_data(request_data):
     """
     Extracts and returns user input, translate type, and language list from request data.
     """
-    text_to_translate = request_data.get("text_to_translate")
-    translate_type = request_data.get("translate_type")
+    print(request_data)
+    text_to_translate = request_data.get("userPrompt")
+    translate_type = request_data.get("translateType")
     langs_list = request_data.get("languages")
 
     return text_to_translate, translate_type, langs_list
