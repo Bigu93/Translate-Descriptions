@@ -58,7 +58,7 @@ def vies_validation():
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-# @token_required
+@token_required
 def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
@@ -89,7 +89,7 @@ def get_images(product_id):
 
 
 @app_test.route("/generate-description", methods=["POST"])
-# @token_required
+@token_required
 def generate_description():
     return handle_generate_description(request)
 
