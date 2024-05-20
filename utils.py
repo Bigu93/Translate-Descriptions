@@ -226,6 +226,15 @@ def parse_product_info(json_data):
     """
     results = json_data.get("results", [])
 
+    def format_location(text_id):
+        parts = text_id.split("\\")
+        if len(parts) == 5:
+            return " - ".join(parts[i] for i in [0, 2, 4])
+        elif len(parts) == 2:
+            return " - ".join(parts)
+        else:
+            return text_id
+
     extracted_data = []
     for result in results:
         found_by = result.get("foundByIndex", [])
@@ -246,13 +255,7 @@ def parse_product_info(json_data):
                     "productNote": info.get("productNote"),
                     "stockLocations": next(
                         (
-                            " - ".join(
-                                part
-                                for i, part in enumerate(
-                                    stock["stockLocationTextId"].split("\\")
-                                )
-                                if i in {0, 2, 4}
-                            )
+                            format_location(stock["stockLocationTextId"])
                             for stock in info.get("stockLocations", [])
                         ),
                         None,
@@ -260,7 +263,7 @@ def parse_product_info(json_data):
                     "germanProductName": next(
                         (
                             desc["name"]
-                            for desc in info.get("productDescriptionsLangData")
+                            for desc in info.get("productDescriptionsLangData", [])
                             if desc["langId"] == "ger"
                         ),
                         None,
@@ -268,16 +271,18 @@ def parse_product_info(json_data):
                     "productRetailPrice": next(
                         (
                             price["productRetailPrice"]
-                            for price in info.get("productPrices")
+                            for price in info.get("productPrices", [])
                             if price["shopName"] == "butosklep.pl"
-                        )
+                        ),
+                        None,
                     ),
                     "productWholesalePrice": next(
                         (
                             price["productWholesalePrice"]
-                            for price in info.get("productPrices")
+                            for price in info.get("productPrices", [])
                             if price["shopName"] == "butosklep.pl"
-                        )
+                        ),
+                        None,
                     ),
                     "productIconSmallUrl": info.get("productIcon", {}).get(
                         "productIconSmallUrl"
@@ -287,7 +292,7 @@ def parse_product_info(json_data):
                     ),
                     "langProductNames": {
                         desc["langId"]: desc["name"]
-                        for desc in info.get("productDescriptionsLangData")
+                        for desc in info.get("productDescriptionsLangData", [])
                     },
                 }
             )
