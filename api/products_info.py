@@ -52,6 +52,12 @@ class ProductApi:
         result = self._base_client.post(endpoint=endpoint, data=payload)
         return result
 
+    def get_products_info(self, data):
+        endpoint = "products/products/get"
+        payload = data
+        result = self._base_client.post(endpoint=endpoint, data=payload)
+        return result
+
     def set_product_description(self, data):
         endpoint = "products/descriptions"
         payload = data

@@ -8,6 +8,7 @@ from product import (
     handle_product_data_request,
     handle_product_info_request,
     handle_product_full_info_request,
+    handle_full_products,
 )
 from translate import handle_translate_request
 from images import handle_images_request
@@ -57,7 +58,7 @@ def vies_validation():
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-@token_required
+# @token_required
 def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
@@ -72,6 +73,11 @@ def product_full_info(product_id):
     return handle_product_full_info_request(request, product_id)
 
 
+@app_test.route("/products-info/<int:page_number>", methods=["GET"])
+def products_info(page_number):
+    return handle_full_products(request, page_number)
+
+
 @app_test.route("/translate", methods=["POST"])
 def translate():
     return handle_translate_request(request)
@@ -83,7 +89,7 @@ def get_images(product_id):
 
 
 @app_test.route("/generate-description", methods=["POST"])
-@token_required
+# @token_required
 def generate_description():
     return handle_generate_description(request)
 

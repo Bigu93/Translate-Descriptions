@@ -42,5 +42,7 @@ def handle_images_request(request, product_id):
         if status_code == 200:
             images = parse_product_images(product_data)
             return images
+        elif status_code == 207:
+            return jsonify({"error": "Brak towaru"}), status_code
         else:
             return jsonify({"error": reason}), status_code

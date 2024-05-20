@@ -7,6 +7,7 @@ from config import (
     PROMPT_META_DESC,
     PROMPT_KEYWORDS,
     LOG_LEVEL,
+    OPENAI_MODEL,
 )
 import logging
 import os
@@ -80,7 +81,7 @@ def process_translation_request(
     """
     OpenAI translation function.
     """
-    model = "gpt-3.5-turbo-1106"
+    model = OPENAI_MODEL
     messages = []
 
     if translate_type in TRANSLATE_TYPES.keys():
@@ -102,7 +103,7 @@ def process_translation_request(
         response = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=4000,
         )
         response_content = response.choices[0].message.content.strip()
@@ -352,6 +353,53 @@ def parse_full_product_info(json_data):
         )
 
     return extracted_data
+
+
+def parse_full_products_info(json_data, base_url):
+    """
+    Parsing JSON about full products info from IdoSell API response.
+    """
+    results = json_data.get("results", [])
+
+    extracted_data = []
+    for result in results:
+        extracted_data.append(
+            {
+                "productId": result.get("productId"),
+                "productDisplayedCode": result.get("productDisplayedCode"),
+                "polishProductName": next(
+                    (
+                        desc["productName"]
+                        for desc in result.get("productDescriptionsLangData")
+                        if desc["langId"] == "pol"
+                    ),
+                    None,
+                ),
+            }
+        )
+
+    current_page = json_data.get("resultsPage", 0)
+    results_limit = json_data.get("resultsLimit", 10)
+    total_pages = json_data.get("resultsNumberPage", 0)
+    total_results = json_data.get("resultsNumberAll", 0)
+
+    pagination = {
+        "current_page": current_page,
+        "results_limit": results_limit,
+        "total_pages": total_pages - 1,
+        "total_results": total_results,
+        "has_next_page": current_page < total_pages - 1,
+        "has_prev_page": current_page > 0,
+        "next_page": f"{base_url}/{current_page + 1}"
+        if current_page < total_pages - 1
+        else None,
+        "prev_page": f"{base_url}/{current_page - 1}" if current_page > 0 else None,
+    }
+
+    return {
+        "data": extracted_data,
+        "pagination": pagination,
+    }
 
 
 def internal_server_error(e):

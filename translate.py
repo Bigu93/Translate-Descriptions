@@ -9,6 +9,7 @@ from config import (
     PROMPT_META_TITLE,
     PROMPT_META_DESC,
     PROMPT_KEYWORDS,
+    OPENAI_MODEL,
 )
 
 TRANSLATE_TYPES = {
@@ -148,7 +149,7 @@ def translate_text(text, target_languages, content_type, category):
     """
     Translate text to the target language using an API.
     """
-    model = "gpt-3.5-turbo-1106"
+    model = OPENAI_MODEL
     messages = []
     system_prompt = TRANSLATE_TYPES.get(content_type, "Invalid content_type")
 
@@ -159,15 +160,17 @@ def translate_text(text, target_languages, content_type, category):
             "content": f"[{text}] Langs:[{','.join(target_languages)}] Category:[{category}]",
         },
     ]
+    print(f"\n\nOpenai request: {messages}")
 
     try:
         response = CLIENT.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=4096,
         )
         response_content = response.choices[0].message.content.strip()
+        print(f"\n\nOpenai response: {response_content}")
         translation = parse_response_content(response_content)
         return translation
     except json.JSONDecodeError as e:

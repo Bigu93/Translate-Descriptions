@@ -7,7 +7,12 @@ from config import (
 )
 from api.auth import Auth
 from api.products_info import ProductApi
-from utils import parse_product_data, parse_product_info, parse_full_product_info
+from utils import (
+    parse_product_data,
+    parse_product_info,
+    parse_full_product_info,
+    parse_full_products_info,
+)
 
 
 def handle_product_data_request(request, product_id):
@@ -85,6 +90,16 @@ def handle_product_full_info_request(request, product_id):
             ), 400
 
 
+def handle_products_full_info_request(request):
+    """
+    Handler for getting full information about specific product.
+    """
+    if request.method == "GET":
+        return handle_full_products(request)
+    else:
+        return jsonify({"error": "Invalid method!"}), 400
+
+
 def handle_product_info_request(request, product_id):
     """
     Handler for getting neccessary information about specific product.
@@ -153,3 +168,27 @@ def handle_product_without_size(request, product_id):
     Handler for getting neccessary information about product.
     """
     return f"Product ID: {product_id}, Size ID not provided"
+
+
+def handle_full_products(request, results_page=0):
+    """
+    Handler for getting information about all products.
+    """
+    auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+    token = auth.get_token()
+    product_api = ProductApi(BASE_URL, token, "v3")
+
+    results_limit = 50
+    payload = {"params": {"resultsPage": results_page, "resultsLimit": results_limit}}
+
+    try:
+        status_code, reason, product_data = product_api.get_products_info(payload)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if status_code == 200:
+        base_url = request.base_url.rsplit("/", 1)[0]
+        data = parse_full_products_info(product_data, base_url)
+        return jsonify(status_code, reason, data)
+    else:
+        return jsonify({"error": reason}), status_code

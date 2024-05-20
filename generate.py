@@ -2,7 +2,7 @@ import json
 from flask import jsonify
 from utils import internal_server_error, invalid_json_format
 from openai import OpenAI
-from config import OPENAI_API_KEY, PROMPT_GENERATE
+from config import OPENAI_API_KEY, OPENAI_MODEL, PROMPT_GENERATE
 
 CLIENT = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -33,7 +33,7 @@ def generate_description(image_links):
     Generate description based on provided prompt and images.
     """
 
-    model = "gpt-4-turbo"
+    model = OPENAI_MODEL
     messages = []
     system_prompt = PROMPT_GENERATE
 
@@ -64,7 +64,7 @@ def generate_description(image_links):
                 }
             ],
             max_tokens=4096,
-            temperature=0.7,
+            temperature=0.6,
         )
         return response
     except json.JSONDecodeError as e:
