@@ -240,6 +240,11 @@ def parse_product_info(json_data):
         found_by = result.get("foundByIndex", [])
         product_info_list = result.get("productSkuList", [])
         for info in product_info_list:
+            stock_locations = [
+                format_location(stock["stockLocationTextId"])
+                for stock in info.get("stockLocations", [])
+            ]
+
             extracted_data.append(
                 {
                     "foundBy": found_by,
@@ -253,13 +258,7 @@ def parse_product_info(json_data):
                     "producerName": info.get("producerName"),
                     "delivererName": info.get("delivererName"),
                     "productNote": info.get("productNote"),
-                    "stockLocations": next(
-                        (
-                            format_location(stock["stockLocationTextId"])
-                            for stock in info.get("stockLocations", [])
-                        ),
-                        None,
-                    ),
+                    "stockLocations": stock_locations if stock_locations else None,
                     "germanProductName": next(
                         (
                             desc["name"]
