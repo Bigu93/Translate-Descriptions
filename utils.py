@@ -240,8 +240,16 @@ def parse_product_info(json_data):
         found_by = result.get("foundByIndex", [])
         product_info_list = result.get("productSkuList", [])
         for info in product_info_list:
+            quantities_dict = {
+                q["stockId"]: q["disposition"] for q in info.get("quantities", [])
+            }
+
             stock_locations = [
-                format_location(stock["stockLocationTextId"])
+                {
+                    "stockId": stock["stockId"],
+                    "location": format_location(stock["stockLocationTextId"]),
+                    "quantity": quantities_dict.get(stock["stockId"], 0),
+                }
                 for stock in info.get("stockLocations", [])
             ]
 
