@@ -244,6 +244,19 @@ def parse_product_info(json_data):
                     "producerName": info.get("producerName"),
                     "delivererName": info.get("delivererName"),
                     "productNote": info.get("productNote"),
+                    "stockLocations": next(
+                        (
+                            " - ".join(
+                                part
+                                for i, part in enumerate(
+                                    stock["stockLocationTextId"].split("\\")
+                                )
+                                if i in {0, 2, 4}
+                            )
+                            for stock in info.get("stockLocations", [])
+                        ),
+                        None,
+                    ),
                     "germanProductName": next(
                         (
                             desc["name"]
