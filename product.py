@@ -100,41 +100,41 @@ def handle_products_full_info_request(request):
         return jsonify({"error": "Invalid method!"}), 400
 
 
-def handle_product_info_request(request, product_id):
+def handle_product_info_request(request, product_ids):
     """
     Handler for getting neccessary information about specific product.
     """
-    if not product_id:
+    if not product_ids:
         return jsonify({"error": "Product ID needs to be provided!"}), 400
 
-    if request.method == "GET":
-        parts = product_id.split("-")
+    product_ids_list = product_ids.split(",")
 
-        if len(parts) == 2:
-            product_id, size_id = parts
-            return handle_product_with_size(request, product_id, size_id)
-        else:
-            return handle_product_without_size(request, product_id)
+    return handle_products_with_size(request, product_ids_list)
 
 
-def handle_product_with_size(request, product_id, size_id):
+def handle_products_with_size(request, product_ids):
     """
-    Handler for getting information about specific product with size code.
+    Handler for getting information about specific products with embedded size codes.
     """
+    if not isinstance(product_ids, (list, tuple)) or not product_ids:
+        return jsonify(
+            {"error": "Invalid product_ids: expected a non-empty list or tuple"}
+        ), 400
+
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
     product_api = ProductApi(BASE_URL, token, "v3")
 
     try:
         status_code, reason, product_data = product_api.get_product_info_with_sizecode(
-            params=[product_id, size_id]
+            params=product_ids
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
     if status_code == 200:
         data = parse_product_info(product_data)
-        return jsonify(status_code, reason, data)
+        return jsonify(status_code=status_code, reason=reason, data=data)
     else:
         return jsonify({"error": reason}), status_code
 
@@ -161,13 +161,6 @@ def handle_full_product_with_size(request, product_id, size_id):
         return jsonify(status_code, reason, data)
     else:
         return jsonify({"error": reason}), status_code
-
-
-def handle_product_without_size(request, product_id):
-    """
-    Handler for getting neccessary information about product.
-    """
-    return f"Product ID: {product_id}, Size ID not provided"
 
 
 def handle_full_products(request, results_page=0):

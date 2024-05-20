@@ -24,12 +24,8 @@ class ProductApi:
         return result
 
     def get_product_info_with_sizecode(self, params):
-        if not isinstance(params, (list, tuple)) or len(params) < 2:
-            raise ValueError(
-                "Invalid params: expected a list or tuple with at least two elements"
-            )
-
-        endpoint = f"products/SKUbyBarcode?productIndices={params[0]}-{params[1]}"
+        product_ids = ",".join(params)
+        endpoint = f"products/SKUbyBarcode?productIndices={product_ids}"
         result = self._base_client.get(endpoint=endpoint)
         return result
 

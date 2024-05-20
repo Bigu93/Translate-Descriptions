@@ -1,0 +1,130 @@
+2024-05-15 14:26:38,884 - app - ERROR - Exception on /products-info [GET]
+Traceback (most recent call last):
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\app.py", line 78, in products_info
+    return handle_full_products(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\product.py", line 182, in handle_full_products
+    status_code, reason, product_data = product_api.get_products_info()
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ProductApi.get_products_info() missing 1 required positional argument: 'data'
+2024-05-15 14:26:38,890 - server_error - ERROR - Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2024-05-15 14:26:38,891 - server_error - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\app.py", line 78, in products_info
+    return handle_full_products(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\product.py", line 182, in handle_full_products
+    status_code, reason, product_data = product_api.get_products_info()
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ProductApi.get_products_info() missing 1 required positional argument: 'data'
+
+2024-05-15 14:27:31,214 - app - ERROR - Exception on /products-info [GET]
+Traceback (most recent call last):
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\app.py", line 78, in products_info
+    return handle_full_products(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\product.py", line 187, in handle_full_products
+    data = parse_full_products_info(product_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\utils.py", line 405, in parse_full_products_info
+    (
+TypeError: 'NoneType' object is not iterable
+2024-05-15 14:27:31,220 - server_error - ERROR - Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2024-05-15 14:27:31,221 - server_error - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\app.py", line 78, in products_info
+    return handle_full_products(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\product.py", line 187, in handle_full_products
+    data = parse_full_products_info(product_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\utils.py", line 405, in parse_full_products_info
+    (
+TypeError: 'NoneType' object is not iterable
+
+2024-05-15 14:29:25,874 - app - ERROR - Exception on /products-info [GET]
+Traceback (most recent call last):
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 1463, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 872, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 870, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Marcin\AppData\Roaming\Python\Python312\site-packages\flask\app.py", line 855, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\app.py", line 78, in products_info
+    return handle_full_products(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\product.py", line 189, in handle_full_products
+    data = parse_full_products_info(product_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Projekty\2023\Translate Descriptions\utils.py", line 405, in parse_full_products_info
+    (
+TypeError: 'NoneType' object is not iterable
+2024-05-15 14:29:25,880 - server_error - ERROR - Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2024-05-15 14:33:59,540 - server_error - ERROR - Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.

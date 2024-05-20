@@ -62,9 +62,9 @@ def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
 
-@app_test.route("/product-info/<product_id>", methods=["GET"])
-def product_info(product_id):
-    return handle_product_info_request(request, product_id)
+@app_test.route("/product-info/<product_ids>", methods=["GET"])
+def product_info(product_ids):
+    return handle_product_info_request(request, product_ids)
 
 
 @app_test.route("/product-full-info/<product_id>", methods=["GET"])
