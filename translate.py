@@ -160,7 +160,6 @@ def translate_text(text, target_languages, content_type, category):
             "content": f"[{text}] Langs:[{','.join(target_languages)}] Category:[{category}]",
         },
     ]
-    print(f"\n\nOpenai request: {messages}")
 
     try:
         response = CLIENT.chat.completions.create(
@@ -170,7 +169,6 @@ def translate_text(text, target_languages, content_type, category):
             max_tokens=4096,
         )
         response_content = response.choices[0].message.content.strip()
-        print(f"\n\nOpenai response: {response_content}")
         translation = parse_response_content(response_content)
         return translation
     except json.JSONDecodeError as e:
