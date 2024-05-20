@@ -47,7 +47,6 @@ def get_token():
 
 
 @app_test.route("/proxy", methods=["POST"])
-@token_required
 def proxy_request():
     return handle_proxy_request(request)
 
