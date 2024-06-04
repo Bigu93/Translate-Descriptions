@@ -375,6 +375,9 @@ def parse_full_product_info(json_data):
                         None,
                     )
                 },
+                "productSizes": [
+                    size["sizeId"] for size in result.get("productSizes", [])
+                ],
             }
         )
 

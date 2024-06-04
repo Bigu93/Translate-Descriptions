@@ -15,6 +15,10 @@ from utils import (
 )
 
 
+def is_ean_code(product_id):
+    return product_id.isdigit() and len(product_id) in {8, 12, 13, 14}
+
+
 def handle_product_data_request(request, product_id):
     """
     Handler for getting name and description data about product.
@@ -79,15 +83,17 @@ def handle_product_full_info_request(request, product_id):
         return jsonify({"error": "Product ID needs to be provided!"}), 400
 
     if request.method == "GET":
-        parts = product_id.split("-")
-
-        if len(parts) == 2:
-            product_id, size_id = parts
-            return handle_full_product_with_size(request, product_id, size_id)
+        if is_ean_code(product_id):
+            return handle_full_product_with_ean(request, product_id)
         else:
-            return jsonify(
-                {"error": "Product ID with size code needs to be provided!"}
-            ), 400
+            parts = product_id.split("-")
+            if len(parts) == 2:
+                product_id, size_id = parts
+                return handle_full_product_with_size(request, product_id, size_id)
+            else:
+                return jsonify(
+                    {"error": "Product ID with size code needs to be provided!"}
+                ), 400
 
 
 def handle_products_full_info_request(request):
@@ -152,6 +158,28 @@ def handle_full_product_with_size(request, product_id, size_id):
             product_api.get_product_full_info_with_sizecode(
                 params=[product_id, size_id]
             )
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if status_code == 200:
+        data = parse_full_product_info(product_data)
+        return jsonify(status_code, reason, data)
+    else:
+        return jsonify({"error": reason}), status_code
+
+
+def handle_full_product_with_ean(request, ean):
+    """
+    Handler for getting full information about product with ean code.
+    """
+    auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+    token = auth.get_token()
+    product_api = ProductApi(BASE_URL, token, "v3")
+
+    try:
+        status_code, reason, product_data = product_api.get_product_full_info_with_ean(
+            params=[ean]
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

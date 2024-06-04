@@ -39,6 +39,14 @@ class ProductApi:
         result = self._base_client.get(endpoint=endpoint)
         return result
 
+    def get_product_full_info_with_ean(self, params):
+        if not params:
+            raise ValueError("Invalid params: expected a string")
+
+        endpoint = f"products/products?productIds={params}"
+        result = self._base_client.get(endpoint=endpoint)
+        return result
+
     def get_product_images(self, data):
         if not data:
             raise Exception("You need to provide data for a product")
