@@ -179,7 +179,7 @@ def handle_full_product_with_ean(request, ean):
 
     try:
         status_code, reason, product_data = product_api.get_product_full_info_with_ean(
-            params=[ean]
+            params=ean
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
