@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
 from utils import get_logger, internal_server_error, invalid_json_format
-from tokens import is_token_valid, generate_token, check_all_tokens
+from tokens import is_token_valid, generate_token, check_all_tokens, token_bp
 from proxy import handle_proxy_request
 from product import (
     handle_product_data_request,
@@ -18,6 +18,7 @@ from vies import handle_vies_request
 from functools import wraps
 
 app_test = Flask(__name__)
+app_test.register_blueprint(token_bp, url_prefix="/token")
 CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
 logger = get_logger("app")
