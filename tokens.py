@@ -92,6 +92,14 @@ def is_token_valid(token):
     return bool(result)
 
 
+def obfuscate_token(token):
+    """Obfuscate the token by showing only the first and last few characters."""
+    if len(token) <= 8:
+        # If the token is very short, just return it as is (or decide on a different approach)
+        return "XD"
+    return f"{token[:1]}****{token[-1:]}"
+
+
 # Function to manually check and log all tokens
 @token_bp.route("/check", methods=["GET"])
 def check_all_tokens():
@@ -99,7 +107,10 @@ def check_all_tokens():
     results = execute_query(query)
     if results:
         tokens = [
-            {"token": token, "expires_at": expires_at.strftime("%Y-%m-%d %H:%M:%S")}
+            {
+                "token": obfuscate_token(token),
+                "expires_at": expires_at.strftime("%Y-%m-%d %H:%M:%S"),
+            }
             for token, expires_at in results
         ]
         logger.info(f"Found {len(tokens)} tokens in the database")
