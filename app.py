@@ -45,7 +45,7 @@ def hello_world():
 
 @app_test.route("/generate-token", methods=["GET"])
 def get_token():
-    return generate_token(request)
+    return generate_token()
 
 
 @app_test.route("/check_tokens")

@@ -51,7 +51,7 @@ def execute_query(query, params=None, fetch=True):
             connection.close()
 
 
-@token_bp.route("/generate", methods=["GET"])
+@token_bp.route("/generate-token", methods=["GET"])
 def generate_token():
     token = secrets.token_hex(16)
     expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
