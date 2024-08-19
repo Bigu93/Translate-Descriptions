@@ -51,12 +51,6 @@ def get_token():
     return generate_token()
 
 
-@app_test.route("/check_tokens")
-def check_tokens():
-    check_all_tokens()
-    return "Check complete. See logs for details"
-
-
 @app_test.route("/proxy", methods=["POST"])
 def proxy_request():
     return handle_proxy_request(request)

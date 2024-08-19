@@ -97,12 +97,10 @@ def is_token_valid(token):
 def obfuscate_token(token):
     """Obfuscate the token by showing only the first and last few characters."""
     if len(token) <= 8:
-        # If the token is very short, just return it as is (or decide on a different approach)
         return "XD"
     return f"{token[:1]}****{token[-1:]}"
 
 
-# Function to manually check and log all tokens
 @token_bp.route("/check", methods=["GET"])
 @require_auth_token
 def check_all_tokens():
@@ -127,6 +125,7 @@ def check_all_tokens():
 
 
 @token_bp.route("/check_setup", methods=["GET"])
+@require_auth_token
 def check_database_setup():
     connection = create_db_connection()
     if not connection:
@@ -135,13 +134,11 @@ def check_database_setup():
 
     try:
         with connection.cursor(buffered=True) as cursor:
-            # Check if the table exists
             cursor.execute("SHOW TABLES LIKE 'api_tokens'")
             if not cursor.fetchone():
                 logger.error("The api_tokens table does not exist")
                 return jsonify({"error": "The api_tokens table does not exist"}), 500
 
-            # Check table structure
             cursor.execute("DESCRIBE api_tokens")
             columns = cursor.fetchall()
             column_names = [column[0] for column in columns]

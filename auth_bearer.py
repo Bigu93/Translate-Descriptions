@@ -78,7 +78,6 @@ def require_auth_token(f):
                 {"error": "Authorization header must start with Bearer"}
             ), 401
 
-        # Check token validity using the database
         if not is_token_valid(token):
             return jsonify({"error": "Invalid or expired token"}), 401
 
