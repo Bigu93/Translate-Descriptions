@@ -33,7 +33,7 @@ def execute_query(query, params=None, fetch=True):
     if not connection:
         return None
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor(buffered=True) as cursor:
             if params:
                 cursor.execute(query, params)
             else:
@@ -47,7 +47,8 @@ def execute_query(query, params=None, fetch=True):
         logger.error(f"Error occurred during query execution: {e}")
         return None
     finally:
-        connection.close()
+        if connection.is_connected():
+            connection.close()
 
 
 @token_bp.route("/generate", methods=["GET"])
@@ -103,6 +104,9 @@ def check_all_tokens():
         ]
         logger.info(f"Found {len(tokens)} tokens in the database")
         return jsonify(tokens), 200
+    elif results is None:
+        logger.error("Error occurred while fetching tokens")
+        return jsonify({"error": "Error occurred while fetching tokens"}), 500
     else:
         logger.info("No tokens found in the database.")
         return jsonify({"message": "No tokens found in the database"}), 200
@@ -116,7 +120,7 @@ def check_database_setup():
         return jsonify({"error": "Failed to connect to the database"}), 500
 
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor(buffered=True) as cursor:
             # Check if the table exists
             cursor.execute("SHOW TABLES LIKE 'api_tokens'")
             if not cursor.fetchone():
@@ -139,4 +143,5 @@ def check_database_setup():
         logger.error(f"Error checking database setup: {e}")
         return jsonify({"error": f"Error checking database setup: {str(e)}"}), 500
     finally:
-        connection.close()
+        if connection.is_connected():
+            connection.close()
