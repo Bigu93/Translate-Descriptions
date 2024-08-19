@@ -10,6 +10,7 @@ from product import (
     handle_product_full_info_request,
     handle_full_products,
 )
+from rephrase import handle_rephrase_description
 from translate import handle_translate_request
 from images import handle_images_request
 from generate import handle_generate_description
@@ -91,6 +92,12 @@ def get_images(product_id):
 @token_required
 def generate_description():
     return handle_generate_description(request)
+
+
+@app_test.route("/rephrase-description", methods=["POST"])
+@token_required
+def rephrase_description():
+    return handle_rephrase_description(request)
 
 
 if __name__ == "__main__":
