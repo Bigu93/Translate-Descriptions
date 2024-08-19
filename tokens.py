@@ -2,11 +2,12 @@ import datetime
 import mysql.connector
 import secrets
 from mysql.connector import Error
-from flask import jsonify
+from flask import jsonify, Blueprint
 from config import DB_NAME, DB_USER, DB_PASS
 from utils import get_logger
 
 logger = get_logger("app")
+token_bp = Blueprint("token", __name__)
 
 
 def create_db_connection():
@@ -24,14 +25,13 @@ def create_db_connection():
     return None
 
 
-def execute_query(query, params=None):
+def execute_query(query, params=None, fetch=True):
     """
     Execute a query and handle connection management.
     """
     connection = create_db_connection()
     if not connection:
         return None
-
     try:
         with connection.cursor() as cursor:
             if params:
@@ -39,7 +39,10 @@ def execute_query(query, params=None):
             else:
                 cursor.execute(query)
             connection.commit()
-            return cursor.fetchall()
+            if fetch:
+                return cursor.fetchall()
+            else:
+                return cursor.rowcount
     except Error as e:
         logger.error(f"Error occurred during query execution: {e}")
         return None
@@ -47,35 +50,36 @@ def execute_query(query, params=None):
         connection.close()
 
 
-def remove_expired_tokens():
-    """
-    Remove expired tokens from the database and log the number of removed tokens.
-    """
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = "DELETE FROM api_tokens WHERE expires_at <= %s"
-    result = execute_query(query, (current_time,))
-
-    if result is not None:
-        affected_rows = result[0][0] if result else 0
-        logger.info(f"Removed {affected_rows} expired tokens at {current_time}")
-    else:
-        logger.error("Failed to remove expired tokens")
-
-
-def generate_token(request):
-    if request.method != "GET":
-        return jsonify({"error": f"Unsupported method {request.method}"}), 405
-
+@token_bp.route("/generate", methods=["GET"])
+def generate_token():
     token = secrets.token_hex(16)
     expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
     query = "INSERT INTO api_tokens (token, expires_at) VALUES (%s, %s)"
-    execute_query(query, (token, expiry_time))
+    result = execute_query(query, (token, expiry_time), fetch=False)
+    if result is not None:
+        logger.info(f"Generated new token: {token}, expires at: {expiry_time}")
+        return jsonify({"token": token})
+    else:
+        logger.error("Failed to generate token")
+        return jsonify({"error": "Failed to generate token"}), 500
 
-    remove_expired_tokens()  # Clean up expired tokens after generating a new one
-    logger.info(f"Generated new token: {token}, expires at: {expiry_time}")
-    return jsonify({"token": token})
+
+@token_bp.route("/cleanup", methods=["POST"])
+def cleanup_tokens():
+    """
+    Remove expired tokens from the database and log the number of removed tokens.
+    """
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    query = "DELETE FROM api_tokens WHERE expires_at <= %s"
+    affected_rows = execute_query(query, (current_time,), fetch=False)
+    if affected_rows is not None:
+        logger.info(f"Removed {affected_rows} expired tokens at {current_time}")
+        return jsonify({"message": f"Removed {affected_rows} expired tokens"}), 200
+    else:
+        logger.error("Failed to remove expired tokens")
+        return jsonify({"error": "Failed to remove expired tokens"}), 500
 
 
 def is_token_valid(token):
@@ -88,11 +92,51 @@ def is_token_valid(token):
 
 
 # Function to manually check and log all tokens
+@token_bp.route("/check", methods=["GET"])
 def check_all_tokens():
     query = "SELECT token, expires_at FROM api_tokens ORDER BY expires_at"
     results = execute_query(query)
     if results:
-        for token, expires_at in results:
-            logger.info(f"Token: {token}, Expires at: {expires_at}")
+        tokens = [
+            {"token": token, "expires_at": expires_at.strftime("%Y-%m-%d %H:%M:%S")}
+            for token, expires_at in results
+        ]
+        logger.info(f"Found {len(tokens)} tokens in the database")
+        return jsonify(tokens), 200
     else:
         logger.info("No tokens found in the database.")
+        return jsonify({"message": "No tokens found in the database"}), 200
+
+
+@token_bp.route("/check_setup", methods=["GET"])
+def check_database_setup():
+    connection = create_db_connection()
+    if not connection:
+        logger.error("Failed to connect to the database")
+        return jsonify({"error": "Failed to connect to the database"}), 500
+
+    try:
+        with connection.cursor() as cursor:
+            # Check if the table exists
+            cursor.execute("SHOW TABLES LIKE 'api_tokens'")
+            if not cursor.fetchone():
+                logger.error("The api_tokens table does not exist")
+                return jsonify({"error": "The api_tokens table does not exist"}), 500
+
+            # Check table structure
+            cursor.execute("DESCRIBE api_tokens")
+            columns = cursor.fetchall()
+            column_names = [column[0] for column in columns]
+            if "token" not in column_names or "expires_at" not in column_names:
+                logger.error("The api_tokens table structure is incorrect")
+                return jsonify(
+                    {"error": "The api_tokens table structure is incorrect"}
+                ), 500
+
+        logger.info("Database setup appears to be correct")
+        return jsonify({"message": "Database setup appears to be correct"}), 200
+    except Error as e:
+        logger.error(f"Error checking database setup: {e}")
+        return jsonify({"error": f"Error checking database setup: {str(e)}"}), 500
+    finally:
+        connection.close()
