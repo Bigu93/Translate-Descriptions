@@ -10,7 +10,7 @@ from product import (
     handle_product_full_info_request,
     handle_full_products,
 )
-from auth_bearer import auth_bp
+from auth_bearer import auth_bp, require_auth_token
 from rephrase import handle_rephrase_description
 from translate import handle_translate_request
 from images import handle_images_request

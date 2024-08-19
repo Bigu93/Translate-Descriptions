@@ -5,6 +5,7 @@ from mysql.connector import Error
 from flask import jsonify, Blueprint
 from config import DB_NAME, DB_USER, DB_PASS
 from utils import get_logger
+from auth_bearer import require_auth_token
 
 logger = get_logger("app")
 token_bp = Blueprint("token", __name__)
@@ -68,6 +69,7 @@ def generate_token():
 
 
 @token_bp.route("/cleanup", methods=["POST"])
+@require_auth_token
 def cleanup_tokens():
     """
     Remove expired tokens from the database and log the number of removed tokens.
@@ -102,6 +104,7 @@ def obfuscate_token(token):
 
 # Function to manually check and log all tokens
 @token_bp.route("/check", methods=["GET"])
+@require_auth_token
 def check_all_tokens():
     query = "SELECT token, expires_at FROM api_tokens ORDER BY expires_at"
     results = execute_query(query)
