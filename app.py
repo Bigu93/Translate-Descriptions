@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
 from utils import get_logger, internal_server_error, invalid_json_format
-from tokens import is_token_valid, generate_token
+from tokens import is_token_valid, generate_token, schedule_token_cleanup
 from proxy import handle_proxy_request
 from product import (
     handle_product_data_request,
@@ -58,7 +58,7 @@ def vies_validation():
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-@token_required
+# @token_required
 def product_data(product_id):
     return handle_product_data_request(request, product_id)
 
@@ -89,16 +89,17 @@ def get_images(product_id):
 
 
 @app_test.route("/generate-description", methods=["POST"])
-@token_required
+# @token_required
 def generate_description():
     return handle_generate_description(request)
 
 
 @app_test.route("/rephrase-description", methods=["POST"])
-@token_required
+# @token_required
 def rephrase_description():
     return handle_rephrase_description(request)
 
 
 if __name__ == "__main__":
+    schedule_token_cleanup()
     app_test.run(host="0.0.0.0", port=5000)
