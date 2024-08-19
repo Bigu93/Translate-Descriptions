@@ -10,6 +10,7 @@ from product import (
     handle_product_full_info_request,
     handle_full_products,
 )
+from auth_bearer import auth_bp
 from rephrase import handle_rephrase_description
 from translate import handle_translate_request
 from images import handle_images_request
@@ -19,6 +20,8 @@ from functools import wraps
 
 app_test = Flask(__name__)
 app_test.register_blueprint(token_bp, url_prefix="/token")
+app_test.register_blueprint(auth_bp, url_prefix="/auth")
+
 CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
 logger = get_logger("app")
