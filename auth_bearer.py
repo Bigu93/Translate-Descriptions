@@ -1,12 +1,55 @@
+import mysql.connector
+import secrets
+from mysql.connector import Error
 from flask import request, jsonify, Blueprint
 from datetime import datetime, timedelta
-from tokens import execute_query
 from utils import get_logger
 from functools import wraps
-import secrets
+from config import DB_NAME, DB_USER, DB_PASS
 
 logger = get_logger("app")
 auth_bp = Blueprint("auth", __name__)
+
+
+def create_db_connection():
+    """
+    Create connection to local database.
+    """
+    try:
+        connection = mysql.connector.connect(
+            host="127.0.0.1", database=DB_NAME, user=DB_USER, password=DB_PASS
+        )
+        if connection.is_connected():
+            return connection
+    except Error as e:
+        logger.error(f"Error while connecting to MySQL: {e}")
+    return None
+
+
+def execute_query(query, params=None, fetch=True):
+    """
+    Execute a query and handle connection management.
+    """
+    connection = create_db_connection()
+    if not connection:
+        return None
+    try:
+        with connection.cursor(buffered=True) as cursor:
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            connection.commit()
+            if fetch:
+                return cursor.fetchall()
+            else:
+                return cursor.rowcount
+    except Error as e:
+        logger.error(f"Error occurred during query execution: {e}")
+        return None
+    finally:
+        if connection.is_connected():
+            connection.close()
 
 
 def is_token_valid(token):
