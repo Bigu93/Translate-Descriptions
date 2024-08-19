@@ -4,6 +4,9 @@ import secrets
 from mysql.connector import Error
 from flask import jsonify
 from config import DB_NAME, DB_USER, DB_PASS
+from utils import get_logger
+
+logger = get_logger("app")
 
 
 def create_db_connection():
@@ -17,7 +20,7 @@ def create_db_connection():
         if connection.is_connected():
             return connection
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        logger.error(f"Error while connecting to MySQL: {e}")
     return None
 
 
@@ -38,21 +41,41 @@ def execute_query(query, params=None):
             connection.commit()
             return cursor.fetchall()
     except Error as e:
-        print(f"Error occurred during query execution: {e}")
+        logger.error(f"Error occurred during query execution: {e}")
         return None
     finally:
         connection.close()
 
 
-def store_token(token):
+def remove_expired_tokens():
     """
-    Store generated token in database with 1 hour expiry time.
+    Remove expired tokens from the database and log the number of removed tokens.
     """
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    query = "DELETE FROM api_tokens WHERE expires_at <= %s"
+    result = execute_query(query, (current_time,))
+
+    if result is not None:
+        affected_rows = result[0][0] if result else 0
+        logger.info(f"Removed {affected_rows} expired tokens at {current_time}")
+    else:
+        logger.error("Failed to remove expired tokens")
+
+
+def generate_token(request):
+    if request.method != "GET":
+        return jsonify({"error": f"Unsupported method {request.method}"}), 405
+
+    token = secrets.token_hex(16)
     expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
     query = "INSERT INTO api_tokens (token, expires_at) VALUES (%s, %s)"
     execute_query(query, (token, expiry_time))
+
+    remove_expired_tokens()  # Clean up expired tokens after generating a new one
+    logger.info(f"Generated new token: {token}, expires at: {expiry_time}")
+    return jsonify({"token": token})
 
 
 def is_token_valid(token):
@@ -64,36 +87,12 @@ def is_token_valid(token):
     return bool(result)
 
 
-def remove_expired_tokens():
-    """
-    Remove expired tokens from the database.
-    """
-    query = "DELETE FROM api_tokens WHERE expires_at <= NOW()"
-    execute_query(query)
-
-
-def generate_token(request):
-    """
-    Generate a new token and store it in the database.
-    """
-    if request.method != "GET":
-        return jsonify({"error": f"Unsupported method {request.method}"}), 405
-
-    token = secrets.token_hex(16)
-    store_token(token)
-    remove_expired_tokens()
-    return jsonify({"token": token})
-
-
-# Call this function when your application starts
-def schedule_token_cleanup():
-    """
-    Schedule periodic cleanup of expired tokens.
-    """
-    import threading
-
-    def cleanup():
-        remove_expired_tokens()
-        threading.Timer(14400, cleanup).start()  # Run every 4 hours
-
-    cleanup()
+# Function to manually check and log all tokens
+def check_all_tokens():
+    query = "SELECT token, expires_at FROM api_tokens ORDER BY expires_at"
+    results = execute_query(query)
+    if results:
+        for token, expires_at in results:
+            logger.info(f"Token: {token}, Expires at: {expires_at}")
+    else:
+        logger.info("No tokens found in the database.")

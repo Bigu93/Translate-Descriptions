@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
 from utils import get_logger, internal_server_error, invalid_json_format
-from tokens import is_token_valid, generate_token, schedule_token_cleanup
+from tokens import is_token_valid, generate_token, check_all_tokens
 from proxy import handle_proxy_request
 from product import (
     handle_product_data_request,
@@ -45,6 +45,12 @@ def hello_world():
 @app_test.route("/generate-token", methods=["GET"])
 def get_token():
     return generate_token(request)
+
+
+@app_test.route("/check_tokens")
+def check_tokens():
+    check_all_tokens()
+    return "Check complete. See logs for details"
 
 
 @app_test.route("/proxy", methods=["POST"])
@@ -101,5 +107,4 @@ def rephrase_description():
 
 
 if __name__ == "__main__":
-    schedule_token_cleanup()
     app_test.run(host="0.0.0.0", port=5000)
