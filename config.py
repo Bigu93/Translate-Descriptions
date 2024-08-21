@@ -43,4 +43,10 @@ Kapcie damskie osadzone na grubej podeszwie zapewniają stabilność i wygodę p
 Zwróć tylko opis, nic więcej.
 """
 
-PROMPT_REPHRASE = """Based on the given description, rephrased it. Leave HTML tags as they are. Return only rephrased description and nothing more. """
+PROMPT_REPHRASE = """
+Na podstawie podanego opisu przeformułuj go. Pozostaw znaczniki HTML bez zmian. Nie zmieniaj ani nie modyfikuj części którego zawierają treść o wyborze rozmiaru na podstawie tabeli rozmiarów i samej tabeli rozmiarów. Nie zmieniaj pierwotnego znaczenia/przeznaczenia tekstu.
+
+{additional_instructions}
+
+Zwróć tylko opis, nic więcej.
+"""

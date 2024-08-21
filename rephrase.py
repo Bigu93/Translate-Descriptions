@@ -16,8 +16,9 @@ def handle_rephrase_description(request):
 
     if request.method == "POST":
         data = request.json
-        product_description = data.get("description", "")
-        rephrased_description = rephrase_description(product_description)
+        product_description = data.get("data", "")
+        options = data.get("options", {})
+        rephrased_description = rephrase_description(product_description, options)
 
         return jsonify(
             {
@@ -28,14 +29,27 @@ def handle_rephrase_description(request):
         )
 
 
-def rephrase_description(product_description):
+def rephrase_description(product_description, options=None):
     """
-    Rephrase description based on provided prompt.
+    Rephrase description based on provided prompt and options.
     """
-
     model = OPENAI_MODEL
-    system_prompt = PROMPT_REPHRASE
+    if options is None:
+        options = {}
+    keywords = options.get("keywords", "")
+    tone = options.get("tone", "")
 
+    additional_instructions = ""
+    if keywords or tone:
+        additional_instructions = f"""Sparafrazowany opis powinien zawierać następujące słowa kluczowe w odpowiedniej i poprawnej odmianie odpowiadającej znaczeniu zdania:
+        {keywords}
+        Ogólny ton/styl powinien być {tone}.
+        """
+
+    system_prompt = PROMPT_REPHRASE.format(
+        additional_instructions=additional_instructions
+    )
+    print(system_prompt)
     messages = [
         {"role": "system", "content": system_prompt},
         {
@@ -43,7 +57,6 @@ def rephrase_description(product_description):
             "content": f"{product_description}",
         },
     ]
-
     try:
         response = CLIENT.chat.completions.create(
             model=model,
