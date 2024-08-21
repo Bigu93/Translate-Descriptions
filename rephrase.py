@@ -49,7 +49,6 @@ def rephrase_description(product_description, options=None):
     system_prompt = PROMPT_REPHRASE.format(
         additional_instructions=additional_instructions
     )
-    print(system_prompt)
     messages = [
         {"role": "system", "content": system_prompt},
         {
