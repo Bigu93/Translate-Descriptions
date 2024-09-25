@@ -2,10 +2,12 @@ from flask import Flask, request, abort
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
 from utils import (
-    get_logger,
     internal_server_error,
     invalid_json_format,
 )
+from logging_config import setup_logging
+
+setup_logging()
 from tokens import is_token_valid, generate_token, token_bp
 from proxy import handle_proxy_request
 from product import (
@@ -27,8 +29,6 @@ app_test.register_blueprint(token_bp, url_prefix="/token")
 app_test.register_blueprint(auth_bp, url_prefix="/auth")
 
 CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
-
-logger = get_logger("app")
 
 app_test.errorhandler(500)(internal_server_error)
 app_test.errorhandler(400)(invalid_json_format)
@@ -83,7 +83,11 @@ def product_full_info(product_id):
 
 @app_test.route("/products-info/<int:page_number>", methods=["GET"])
 def products_info(page_number):
-    return handle_full_products(request, page_number)
+    results_limit = request.args.get("results_limit", default=50, type=int)
+    if not (1 <= results_limit <= 100):
+        results_limit = 50
+
+    return handle_full_products(request, page_number, results_limit)
 
 
 @app_test.route("/translate", methods=["POST"])

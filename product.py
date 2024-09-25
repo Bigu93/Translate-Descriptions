@@ -198,15 +198,14 @@ def handle_full_product_with_ean(ean):
     )
 
 
-def handle_full_products(request, results_page=0):
+def handle_full_products(request, results_page=0, results_limit=50):
     """
-    Handler for getting information about all products with pagination.
+    Handler for getting information about all products with pagination and a dynamic results limit,
+    with a constraint of results_limit between 1 and 100.
     """
     product_api = get_product_api()
 
-    results_limit = 50
     payload = {"params": {"resultsPage": results_page, "resultsLimit": results_limit}}
-
     try:
         status_code, reason, product_data = product_api.get_products_info(payload)
     except ValueError as e:

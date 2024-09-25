@@ -1,7 +1,9 @@
 import requests
 import time
 import base64
-from utils import get_logger
+from logging_config import get_logger
+
+logger = get_logger("api")
 
 
 class Auth:
@@ -14,7 +16,7 @@ class Auth:
         :param client_secret: panel api secret
         :param base_url: url for api gateway
         """
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = logger
         self.encoded_credentials = self.encode_credentials(
             client_username, client_secret
         )

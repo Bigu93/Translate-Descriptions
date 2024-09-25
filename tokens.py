@@ -4,10 +4,10 @@ import secrets
 from mysql.connector import Error
 from flask import jsonify, Blueprint
 from config import DB_NAME, DB_USER, DB_PASS
-from utils import get_logger
+from logging_config import get_logger
 from auth_bearer import require_auth_token
 
-logger = get_logger("app")
+logger = get_logger(__name__)
 token_bp = Blueprint("token", __name__)
 
 

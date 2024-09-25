@@ -3,11 +3,11 @@ import secrets
 from mysql.connector import Error
 from flask import request, jsonify, Blueprint
 from datetime import datetime, timedelta
-from utils import get_logger
+from logging_config import get_logger
 from functools import wraps
 from config import DB_NAME, DB_USER, DB_PASS
 
-logger = get_logger("app")
+logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 

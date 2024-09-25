@@ -1,4 +1,7 @@
-from logging.handlers import RotatingFileHandler
+import os
+import traceback
+import json
+from logging_config import get_logger
 from flask import jsonify
 from config import (
     PROMPT_PRODUCT_NAME,
@@ -14,16 +17,6 @@ from config import (
 )
 from api.auth import Auth
 from api.products_info import ProductApi
-import logging
-import os
-import traceback
-import json
-
-
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 
 TRANSLATE_TYPES = {
     "name": PROMPT_PRODUCT_NAME,
@@ -32,24 +25,6 @@ TRANSLATE_TYPES = {
     "meta_description": PROMPT_META_DESC,
     "keywords": PROMPT_KEYWORDS,
 }
-
-
-def get_logger(name="__default__"):
-    """
-    Returns a logger with rotating file handler. Default name is '__default__'.
-    """
-    handler = RotatingFileHandler(
-        os.path.join("logs", "app.log"), maxBytes=10000, backupCount=3, encoding="utf-8"
-    )
-    handler.setLevel(getattr(logging, LOG_LEVEL))
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger = logging.getLogger(name)
-    if not logger.handlers:
-        logger.addHandler(handler)
-    return logger
 
 
 def get_product_api():
