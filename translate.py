@@ -1,6 +1,10 @@
 import json
 from flask import jsonify
-from utils import parse_response_content, internal_server_error, invalid_json_format
+from utils import (
+    parse_response_content_openai,
+    internal_server_error,
+    invalid_json_format,
+)
 from openai import OpenAI
 from config import OPENAI_API_KEY
 from config import (
@@ -38,8 +42,6 @@ LANGUAGE_MAP = {
 }
 
 REVERSE_LANGUAGE_MAP = {v: k for k, v in LANGUAGE_MAP.items()}
-
-
 CLIENT = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -152,7 +154,6 @@ def translate_text(text, target_languages, content_type, category):
     model = OPENAI_MODEL
     messages = []
     system_prompt = TRANSLATE_TYPES.get(content_type, "Invalid content_type")
-
     messages = [
         {"role": "system", "content": system_prompt},
         {
@@ -169,7 +170,7 @@ def translate_text(text, target_languages, content_type, category):
             max_tokens=4096,
         )
         response_content = response.choices[0].message.content.strip()
-        translation = parse_response_content(response_content)
+        translation = parse_response_content_openai(response_content)
         return translation
     except json.JSONDecodeError as e:
         invalid_json_format(e, response_content)

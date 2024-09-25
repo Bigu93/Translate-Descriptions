@@ -1,30 +1,19 @@
 from flask import jsonify
-from config import (
-    CLIENT_SECRET,
-    CLIENT_USERNAME,
-    BASE_URL,
-)
-from api.auth import Auth
-from api.products_info import ProductApi
-from utils import (
-    parse_product_images,
-)
+from utils import parse_product_images, get_product_api
 
 
 def handle_images_request(request, product_id):
     """
     Handler for getting product images.
     """
+    product_api = get_product_api()
+
     if request.method != "GET":
         return jsonify({"error": "Unsupported method!"}), 400
 
     if not product_id:
         return jsonify({"error": "Product ID needs to be provided!"}), 400
     elif product_id and request.method == "GET":
-        auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
-        token = auth.get_token()
-        product_api = ProductApi(BASE_URL, token, "v3")
-
         payload = {
             "params": {
                 "returnElements": ["pictures"],

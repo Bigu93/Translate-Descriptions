@@ -8,7 +8,12 @@ from config import (
     PROMPT_KEYWORDS,
     LOG_LEVEL,
     OPENAI_MODEL,
+    CLIENT_SECRET,
+    CLIENT_USERNAME,
+    BASE_URL,
 )
+from api.auth import Auth
+from api.products_info import ProductApi
 import logging
 import os
 import traceback
@@ -41,18 +46,23 @@ def get_logger(name="__default__"):
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
-
     logger = logging.getLogger(name)
     if not logger.handlers:
         logger.addHandler(handler)
     return logger
 
 
+def get_product_api():
+    """Initialize and return a ProductApi instance."""
+    auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
+    token = auth.get_token()
+    return ProductApi(BASE_URL, token, "v3")
+
+
 def extract_request_data(request_data):
     """
     Extracts and returns user input, translate type, and language list from request data.
     """
-    print(request_data)
     text_to_translate = request_data.get("userPrompt")
     translate_type = request_data.get("translateType")
     langs_list = request_data.get("languages")
@@ -100,6 +110,7 @@ def process_translation_request(
             "content": f"[{text_to_translate}] Langs:[{','.join(langs_list)}]",
         }
     )
+
     try:
         response = client.chat.completions.create(
             model=model,
@@ -109,7 +120,7 @@ def process_translation_request(
         )
         response_content = response.choices[0].message.content.strip()
         tokens_used = response.usage.total_tokens
-        translations = parse_response_content(response_content)
+        translations = parse_response_content_openai(response_content)
 
         return translations, tokens_used, messages
     except json.JSONDecodeError as e:
@@ -143,7 +154,7 @@ def ensure_quotes_and_escape(json_obj):
         return json_obj
 
 
-def parse_response_content(response_content):
+def parse_response_content_openai(response_content):
     """
     Validating and parsing the response from OpenAI, ensuring all keys and values are enclosed in double quotes,
     and escaping single quotes in values.
@@ -176,7 +187,6 @@ def parse_product_data(json_data, lang=None, fields=None):
             "productIdent": product["productIdent"],
             "productDescriptionsLangData": {},
         }
-
         for lang_data in product["productDescriptionsLangData"]:
             current_lang = lang_data["langId"]
 
@@ -194,9 +204,7 @@ def parse_product_data(json_data, lang=None, fields=None):
                 product_info["productDescriptionsLangData"][current_lang].append(
                     filtered_lang_data
                 )
-
         parsed_data.append(product_info)
-
     return parsed_data
 
 
@@ -205,8 +213,8 @@ def parse_product_images(json_data):
     Parsing JSON from IdoSell API response.
     """
     results = json_data.get("results", [])
-
     extracted_data = []
+
     for result in results:
         product_images = result.get("productImages", [])
         for image in product_images:
@@ -216,7 +224,6 @@ def parse_product_images(json_data):
                     "productImageId": image.get("productImageId"),
                 }
             )
-
     return jsonify(extracted_data)
 
 
@@ -236,6 +243,7 @@ def parse_product_info(json_data):
             return text_id
 
     extracted_data = []
+
     for result in results:
         found_by = result.get("foundByIndex", [])
         product_info_list = result.get("productSkuList", [])
@@ -243,7 +251,6 @@ def parse_product_info(json_data):
             quantities_dict = {
                 q["stockId"]: q["disposition"] for q in info.get("quantities", [])
             }
-
             stock_locations = [
                 {
                     "stockId": stock["stockId"],
@@ -252,7 +259,6 @@ def parse_product_info(json_data):
                 }
                 for stock in info.get("stockLocations", [])
             ]
-
             extracted_data.append(
                 {
                     "foundBy": found_by,
@@ -303,7 +309,6 @@ def parse_product_info(json_data):
                     },
                 }
             )
-
     return extracted_data
 
 
@@ -312,7 +317,6 @@ def parse_full_product_info(json_data):
     Parsing JSON about full product info from IdoSell API response.
     """
     results = json_data.get("results", [])
-
     extracted_data = []
     for result in results:
         extracted_data.append(
@@ -328,7 +332,9 @@ def parse_full_product_info(json_data):
                     "productIconLargeUrl"
                 ),
                 "productAuctionIconLargeUrl": f"""https://butosklep.pl/{result.get("productAuctionIcon", {}).get(
+
                     "productAuctionIconLargeUrl"
+
                 )}""",
                 "productSmallImages": {
                     index + 1: image["productImageSmallUrl"]
@@ -380,7 +386,6 @@ def parse_full_product_info(json_data):
                 ],
             }
         )
-
     return extracted_data
 
 
@@ -389,7 +394,6 @@ def parse_full_products_info(json_data, base_url):
     Parsing JSON about full products info from IdoSell API response.
     """
     results = json_data.get("results", [])
-
     extracted_data = []
     for result in results:
         extracted_data.append(
@@ -406,12 +410,10 @@ def parse_full_products_info(json_data, base_url):
                 ),
             }
         )
-
     current_page = json_data.get("resultsPage", 0)
     results_limit = json_data.get("resultsLimit", 10)
     total_pages = json_data.get("resultsNumberPage", 0)
     total_results = json_data.get("resultsNumberAll", 0)
-
     pagination = {
         "current_page": current_page,
         "results_limit": results_limit,
@@ -424,7 +426,6 @@ def parse_full_products_info(json_data, base_url):
         else None,
         "prev_page": f"{base_url}/{current_page - 1}" if current_page > 0 else None,
     }
-
     return {
         "data": extracted_data,
         "pagination": pagination,

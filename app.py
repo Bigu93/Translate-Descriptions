@@ -1,7 +1,11 @@
 from flask import Flask, request, abort
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
-from utils import get_logger, internal_server_error, invalid_json_format
+from utils import (
+    get_logger,
+    internal_server_error,
+    invalid_json_format,
+)
 from tokens import is_token_valid, generate_token, token_bp
 from proxy import handle_proxy_request
 from product import (
