@@ -7,21 +7,18 @@ from config import LOG_LEVEL
 
 class CustomRotatingFileHandler(BaseRotatingHandler):
     """
-    A custom rotating file handler that generates log files like 'app_date_1.log',
-    'app_date_2.log', etc., with rotation based on file size.
+    A custom rotating file handler that generates log files like 'app_1.log',
+    'app_2.log', etc., with rotation based on file size.
     """
 
     def __init__(self, base_filename, maxBytes=10000, backupCount=10, encoding=None):
         self.base_filename = base_filename
         self.maxBytes = maxBytes
         self.backupCount = backupCount
-        self.current_index = 0
+        self.current_index = 1
         self.encoding = encoding
 
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        self.log_filename = (
-            f"{self.base_filename}_{current_date}_{self.current_index}.log"
-        )
+        self.log_filename = f"{self.base_filename}_{self.current_index}.log"
         super().__init__(self.log_filename, "a", encoding)
 
     def shouldRollover(self, record):
@@ -42,11 +39,7 @@ class CustomRotatingFileHandler(BaseRotatingHandler):
             self.stream.close()
 
         self.current_index += 1
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        self.log_filename = (
-            f"{self.base_filename}_{current_date}_{self.current_index}.log"
-        )
-
+        self.log_filename = f"{self.base_filename}_{self.current_index}.log"
         self.stream = self._open()
 
         if self.backupCount > 0:
@@ -55,7 +48,7 @@ class CustomRotatingFileHandler(BaseRotatingHandler):
                 [
                     f
                     for f in os.listdir(log_dir)
-                    if f.startswith(log_basename) and f.endswith(".log")
+                    if f.startswith(log_basename + "_") and f.endswith(".log")
                 ],
                 key=lambda f: os.path.getmtime(os.path.join(log_dir, f)),
             )
@@ -67,7 +60,7 @@ class CustomRotatingFileHandler(BaseRotatingHandler):
 def setup_logging(name="app"):
     """
     Configures a logger with a custom rotating file handler.
-    The log file will include the current date and an index for rotated files.
+    The log file will include an index for rotated files.
     """
     log_dir = "logs"
     if not os.path.exists(log_dir):
@@ -79,7 +72,7 @@ def setup_logging(name="app"):
         handler = CustomRotatingFileHandler(
             base_filename=base_log_filename,
             maxBytes=10000,
-            backupCount=3,
+            backupCount=10,
             encoding="utf-8",
         )
         handler.setLevel(getattr(logging, LOG_LEVEL.upper(), logging.INFO))
