@@ -2,10 +2,11 @@ from flask import jsonify
 from utils import parse_product_images, get_product_api
 
 
-def handle_images_request(request, product_id):
+def handle_images_request(request):
     """
     Handler for getting product images.
     """
+    product_id = request.view_args.get("product_id")
     product_api = get_product_api()
 
     if request.method != "GET":

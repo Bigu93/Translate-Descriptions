@@ -1,13 +1,11 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, send_from_directory, make_response
 from flask_cors import CORS
 from config import ALLOWED_ORIGINS
 from utils import (
     internal_server_error,
     invalid_json_format,
 )
-from logging_config import setup_logging
-
-setup_logging()
+from logging_config import get_logger
 from tokens import is_token_valid, generate_token, token_bp
 from proxy import handle_proxy_request
 from product import (
@@ -24,9 +22,13 @@ from generate import handle_generate_description
 from vies import handle_vies_request
 from functools import wraps
 
+logger = get_logger("app")
+
 app_test = Flask(__name__)
 app_test.register_blueprint(token_bp, url_prefix="/token")
 app_test.register_blueprint(auth_bp, url_prefix="/auth")
+
+app_test.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
 CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
@@ -66,9 +68,10 @@ def vies_validation():
 
 
 @app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-@token_required
+# @token_required
 def product_data(product_id):
-    return handle_product_data_request(request, product_id)
+    request.view_args["product_id"] = product_id
+    return handle_product_data_request(request)
 
 
 @app_test.route("/product-info/<product_ids>", methods=["GET"])
@@ -78,16 +81,17 @@ def product_info(product_ids):
 
 @app_test.route("/product-full-info/<product_id>", methods=["GET"])
 def product_full_info(product_id):
-    return handle_product_full_info_request(request, product_id)
+    request.view_args["product_id"] = product_id
+    return handle_product_full_info_request(request)
 
 
-@app_test.route("/products-info/<int:page_number>", methods=["GET"])
-def products_info(page_number):
+@app_test.route("/products-info/<int:results_page>", methods=["GET"])
+def products_info(results_page):
     results_limit = request.args.get("results_limit", default=50, type=int)
     if not (1 <= results_limit <= 100):
         results_limit = 50
 
-    return handle_full_products(request, page_number, results_limit)
+    return handle_full_products(request, results_page, results_limit)
 
 
 @app_test.route("/translate", methods=["POST"])
@@ -97,17 +101,18 @@ def translate():
 
 @app_test.route("/images/<product_id>", methods=["GET"])
 def get_images(product_id):
-    return handle_images_request(request, product_id)
+    request.view_args["product_id"] = product_id
+    return handle_images_request(request)
 
 
 @app_test.route("/generate-description", methods=["POST"])
-@token_required
+# @token_required
 def generate_description():
     return handle_generate_description(request)
 
 
 @app_test.route("/rephrase-description", methods=["POST"])
-@token_required
+# @token_required
 def rephrase_description():
     return handle_rephrase_description(request)
 

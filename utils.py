@@ -31,7 +31,7 @@ def get_product_api():
     """Initialize and return a ProductApi instance."""
     auth = Auth(CLIENT_USERNAME, CLIENT_SECRET, BASE_URL)
     token = auth.get_token()
-    return ProductApi(BASE_URL, token, "v3")
+    return ProductApi(BASE_URL, token)
 
 
 def extract_request_data(request_data):
@@ -396,9 +396,9 @@ def parse_full_products_info(json_data, base_url):
         "total_results": total_results,
         "has_next_page": current_page < total_pages - 1,
         "has_prev_page": current_page > 0,
-        "next_page": f"{base_url}/{current_page + 1}"
-        if current_page < total_pages - 1
-        else None,
+        "next_page": (
+            f"{base_url}/{current_page + 1}" if current_page < total_pages - 1 else None
+        ),
         "prev_page": f"{base_url}/{current_page - 1}" if current_page > 0 else None,
     }
     return {

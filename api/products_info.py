@@ -1,17 +1,21 @@
-import logging
-from api.base_client import BaseClient
+from logging_config import get_logger
+from api.base_client import BaseClient, APIRequestError, APIResponseError
 
 
 class ProductApi:
+
     def __init__(
         self,
         hostname: str,
         auth_token: str,
-        ver: str,
+        version: str = "v3",
         ssl_verify: bool = True,
-        logger: logging.Logger = None,
+        logger: get_logger = None,
     ):
-        self._base_client = BaseClient(hostname, auth_token, ver, ssl_verify, logger)
+        self._base_client = BaseClient(
+            hostname, auth_token, version, ssl_verify, logger
+        )
+        self.logger = logger if logger else get_logger("api")
 
     def get_product_description(self, params):
         if not isinstance(params, (list, tuple)) or len(params) < 2:
@@ -20,13 +24,20 @@ class ProductApi:
             )
 
         endpoint = f"products/descriptions?type=id&ids={params[0]}&shopId={params[1]}"
-        result = self._base_client.get(endpoint=endpoint)
-        return result
+        try:
+            return self._base_client.get(endpoint=endpoint)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get product description: {e}")
+            raise
 
     def get_product_info_with_sizecode(self, params):
         product_ids = ",".join(params)
         endpoint = f"products/SKUbyBarcode?productIndices={product_ids}"
-        result = self._base_client.get(endpoint=endpoint)
+        try:
+            return self._base_client.get(endpoint=endpoint)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get product info with size code: {e}")
+            raise
         return result
 
     def get_product_full_info_with_sizecode(self, params):
@@ -36,34 +47,52 @@ class ProductApi:
             )
 
         endpoint = f"products/products?productIds={params[0]}-{params[1]}"
-        result = self._base_client.get(endpoint=endpoint)
-        return result
+        try:
+            return self._base_client.get(endpoint=endpoint)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get full product info with sizecode: {e}")
+            raise
 
     def get_product_full_info_with_ean(self, params):
         if not params:
             raise ValueError("Invalid params: expected a string")
 
         endpoint = f"products/products?productIds={params}"
-        result = self._base_client.get(endpoint=endpoint)
-        return result
+        try:
+            return self._base_client.get(endpoint=endpoint)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get full product info with EAN: {e}")
+            raise
 
-    def get_product_images(self, data):
-        if not data:
-            raise Exception("You need to provide data for a product")
+    def get_product_images(self, data: dict):
+        if not isinstance(data, dict) or not data:
+            raise ValueError("data must be a non-empty dictionary.")
 
         endpoint = "products/products/get"
-        payload = data
-        result = self._base_client.post(endpoint=endpoint, data=payload)
-        return result
+        try:
+            return self._base_client.post(endpoint=endpoint, data=data)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get product images: {e}")
+            raise
 
-    def get_products_info(self, data):
+    def get_products_info(self, data: dict):
+        if not isinstance(data, dict) or not data:
+            raise ValueError("data must be a non-empty dictionary.")
+
         endpoint = "products/products/get"
-        payload = data
-        result = self._base_client.post(endpoint=endpoint, data=payload)
-        return result
+        try:
+            return self._base_client.post(endpoint=endpoint, data=data)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to get products info: {e}")
+            raise
 
-    def set_product_description(self, data):
+    def set_product_description(self, data: dict):
+        if not isinstance(data, dict) or not data:
+            raise ValueError("data must be a non-empty dictionary.")
+
         endpoint = "products/descriptions"
-        payload = data
-        result = self._base_client.put(endpoint=endpoint, data=payload)
-        return result
+        try:
+            return self._base_client.put(endpoint=endpoint, data=data)
+        except (APIRequestError, APIResponseError) as e:
+            self._logger.error(f"Failed to set product description: {e}")
+            raise

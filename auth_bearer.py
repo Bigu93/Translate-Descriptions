@@ -7,7 +7,7 @@ from logging_config import get_logger
 from functools import wraps
 from config import DB_NAME, DB_USER, DB_PASS
 
-logger = get_logger(__name__)
+logger = get_logger("flask_auth")
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -74,9 +74,10 @@ def require_auth_token(f):
             return jsonify({"error": "Invalid authorization header format"}), 401
 
         if auth_type.lower() != "bearer":
-            return jsonify(
-                {"error": "Authorization header must start with Bearer"}
-            ), 401
+            return (
+                jsonify({"error": "Authorization header must start with Bearer"}),
+                401,
+            )
 
         if not is_token_valid(token):
             return jsonify({"error": "Invalid or expired token"}), 401

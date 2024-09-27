@@ -7,7 +7,7 @@ from config import DB_NAME, DB_USER, DB_PASS
 from logging_config import get_logger
 from auth_bearer import require_auth_token
 
-logger = get_logger(__name__)
+logger = get_logger("tokens")
 token_bp = Blueprint("token", __name__)
 
 
@@ -91,6 +91,7 @@ def is_token_valid(token):
     """
     query = "SELECT expires_at FROM api_tokens WHERE token = %s AND expires_at > NOW()"
     result = execute_query(query, (token,))
+    print(f"Token: {token}, wynik z bazy: {result}")
     return bool(result)
 
 
@@ -144,9 +145,10 @@ def check_database_setup():
             column_names = [column[0] for column in columns]
             if "token" not in column_names or "expires_at" not in column_names:
                 logger.error("The api_tokens table structure is incorrect")
-                return jsonify(
-                    {"error": "The api_tokens table structure is incorrect"}
-                ), 500
+                return (
+                    jsonify({"error": "The api_tokens table structure is incorrect"}),
+                    500,
+                )
 
         logger.info("Database setup appears to be correct")
         return jsonify({"message": "Database setup appears to be correct"}), 200

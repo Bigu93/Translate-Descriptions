@@ -50,7 +50,7 @@ def handle_product_data_request(request):
         )
 
         try:
-            status_code, reason, product_data = product_api.get_product_description(
+            (status_code, reason, product_data) = product_api.get_product_description(
                 params=[product_id, shopid]
             )
         except ValueError as e:
@@ -107,9 +107,10 @@ def handle_product_full_info_request(request):
             base_product_id, size_id = parts
             return handle_full_product_with_size(base_product_id, size_id)
         else:
-            return jsonify(
-                {"error": "Product ID with size code needs to be provided!"}
-            ), 400
+            return (
+                jsonify({"error": "Product ID with size code needs to be provided!"}),
+                400,
+            )
 
 
 def handle_products_full_info_request(request):
@@ -122,19 +123,18 @@ def handle_products_full_info_request(request):
     return handle_full_products()
 
 
-def handle_product_info_request(request):
+def handle_product_info_request(request, product_ids):
     """
     Handler for getting necessary information about specific products.
     Expects a comma-separated list of product_ids.
     """
-    product_ids = request.args.get("product_ids")
 
     if not product_ids:
         return jsonify({"error": "Product IDs need to be provided!"}), 400
 
     product_ids_list = product_ids.split(",")
 
-    return handle_products_with_size(product_ids_list)
+    return handle_products_with_size(request, product_ids_list)
 
 
 def handle_products_with_size(request, product_ids):
@@ -142,9 +142,12 @@ def handle_products_with_size(request, product_ids):
     Handler for getting information about specific products with embedded size codes.
     """
     if not isinstance(product_ids, (list, tuple)) or not product_ids:
-        return jsonify(
-            {"error": "Invalid product_ids: expected a non-empty list or tuple"}
-        ), 400
+        return (
+            jsonify(
+                {"error": "Invalid product_ids: expected a non-empty list or tuple"}
+            ),
+            400,
+        )
 
     product_api = get_product_api()
 
