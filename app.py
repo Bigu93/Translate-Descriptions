@@ -23,6 +23,7 @@ from vies import handle_vies_request
 from functools import wraps
 
 logger = get_logger("app")
+logger_files = get_logger("static_files")
 
 app_test = Flask(__name__)
 app_test.register_blueprint(token_bp, url_prefix="/token")
