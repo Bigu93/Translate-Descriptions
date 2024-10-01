@@ -1,1 +1,0 @@
-const SUPER = "HELLOOO";
