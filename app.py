@@ -47,6 +47,21 @@ def token_required(f):
     return decorated_function
 
 
+@app_test.before_request
+def log_request():
+    if request.path.startswith("/static/"):
+        logger_files.info(f"Static file request: {request.path}")
+
+
+@app_test.after_request
+def log_response(response):
+    if request.path.startswith("/static"):
+        logger_files.info(
+            f"Static file request completed: {request.path}, Status: {response.status_code}"
+        )
+    return response
+
+
 @app_test.route("/")
 def hello_world():
     return "Hello Butosklep!"
