@@ -28,17 +28,22 @@ LANGUAGE_MAP = {
     "pol": "Polish",
     "bul": "Bulgarian",
     "cze": "Czech",
+    "dut": "Dutch",
     "eng": "English",
     "est": "Estonian",
+    "fre": "French",
     "ger": "German",
+    "gre": "Greek",
     "hun": "Hungarian",
     "ita": "Italian",
+    "lav": "Latvian",
     "lit": "Lithuanian",
     "rum": "Romanian",
     "scr": "Croatian",
     "slo": "Slovak",
     "slv": "Slovenian",
     "spa": "Spanish",
+    "ukr": "Ukrainian",
 }
 
 REVERSE_LANGUAGE_MAP = {v: k for k, v in LANGUAGE_MAP.items()}
@@ -93,9 +98,9 @@ def handle_translate_request(request):
                             )
                             if target_lang_code not in location_translations:
                                 location_translations[target_lang_code] = {}
-                            location_translations[target_lang_code][field] = (
-                                translated_text
-                            )
+                            location_translations[target_lang_code][
+                                field
+                            ] = translated_text
 
                 translations.append(
                     {
