@@ -122,6 +122,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.vscode/
 env/
 venv/
 ENV/
@@ -162,3 +163,6 @@ node_modules
 stderr.log
 record_debug.log
 tmp/
+plans/
+logs/
+docs/

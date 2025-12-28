@@ -1,137 +1,184 @@
-from flask import Flask, request, abort, send_from_directory, make_response
+"""
+Main application entry point using new architecture.
+"""
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
-from config import ALLOWED_ORIGINS
-from utils import (
-    internal_server_error,
-    invalid_json_format,
+from app.config.settings import get_allowed_origins
+from app.infrastructure.logging.structured_logger import get_logger
+from app.infrastructure.database.connection_pool import get_connection_pool
+from app.infrastructure.database.token_repository import TokenRepository
+from app.infrastructure.database.bearer_repository import BearerRepository
+from app.presentation.web.routes import (
+    create_product_routes,
+    create_translation_routes,
+    create_auth_routes,
 )
-from logging_config import get_logger
-from tokens import is_token_valid, generate_token, token_bp
-from proxy import handle_proxy_request
-from product import (
-    handle_product_data_request,
-    handle_product_info_request,
-    handle_product_full_info_request,
-    handle_full_products,
+from app.presentation.web.handlers import (
+    ProductHandlers,
+    TranslationHandlers,
+    AuthHandlers,
 )
-from auth_bearer import auth_bp
-from rephrase import handle_rephrase_description
-from translate import handle_translate_request
-from images import handle_images_request
-from generate import handle_generate_description
-from vies import handle_vies_request
-from functools import wraps
+from app.core.services import (
+    ProductService,
+    TranslationService,
+    AuthService,
+    TokenService,
+)
+from app.core.strategies.openai_strategy import OpenAIStrategy
+from app.factories.api_client_factory import create_products_client
+from app.factories.cache_factory import get_cache_provider
+from app.config.settings import (
+    get_base_url,
+    get_client_username,
+    get_client_secret,
+    get_openai_api_key,
+    get_openai_model,
+)
+
 
 logger = get_logger("app")
 logger_files = get_logger("static_files")
 
-app_test = Flask(__name__)
-app_test.register_blueprint(token_bp, url_prefix="/token")
-app_test.register_blueprint(auth_bp, url_prefix="/auth")
+# Create Flask app
+app = Flask(__name__)
 
-app_test.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
+# Configure CORS
+allowed_origins = get_allowed_origins()
+CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
-CORS(app_test, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
-
-app_test.errorhandler(500)(internal_server_error)
-app_test.errorhandler(400)(invalid_json_format)
-
-
-def token_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = request.headers.get("Authorization")
-        if not token or not is_token_valid(token):
-            abort(403)
-        return f(*args, **kwargs)
-
-    return decorated_function
+# Configure static file caching
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
 
-@app_test.before_request
-def log_request():
-    if request.path.startswith("/static/"):
-        logger_files.info(f"Static file request: {request.path}")
+def initialize_services():
+    """
+    Initialize all services with dependency injection.
+    
+    Returns:
+        Tuple of (products_client, product_service, translation_service, auth_service, token_service)
+    """
+    # Create products client
+    base_url = get_base_url()
+    client_username = get_client_username()
+    client_secret = get_client_secret()
+    products_client = create_products_client(base_url, client_username, client_secret)
+
+    # Create cache
+    cache = get_cache_provider()
+
+    # Create translation strategy
+    openai_api_key = get_openai_api_key()
+    openai_model = get_openai_model()
+    translation_strategy = OpenAIStrategy(api_key=openai_api_key, model=openai_model)
+
+    # Get logger for services
+    service_logger = get_logger("services")
+
+    # Create services
+    product_service = ProductService(products_client)
+    translation_service = TranslationService(translation_strategy, cache, service_logger)
+    
+    # Initialize database-dependent services
+    connection_pool = get_connection_pool()
+    token_repository = TokenRepository(connection_pool)
+    bearer_repository = BearerRepository(connection_pool)
+    
+    # Create auth and token services with dependencies
+    token_service = TokenService(token_repository, service_logger)
+    auth_service = AuthService(bearer_repository, service_logger)
+
+    return products_client, product_service, translation_service, auth_service, token_service
 
 
-@app_test.after_request
-def log_response(response):
-    if request.path.startswith("/static"):
-        logger_files.info(
-            f"Static file request completed: {request.path}, Status: {response.status_code}"
-        )
-    return response
+def register_blueprints():
+    """
+    Register all route blueprints.
+    """
+    products_client, product_service, translation_service, auth_service, token_service = initialize_services()
+
+    # Create handlers
+    product_handlers = ProductHandlers(products_client)
+    translation_handlers = TranslationHandlers(translation_service)
+    auth_handlers = AuthHandlers(auth_service, token_service)
+
+    # Create routes
+    product_routes = create_product_routes(product_handlers)
+    translation_routes = create_translation_routes(translation_handlers)
+    auth_routes = create_auth_routes(auth_handlers)
+
+    # Register blueprints
+    app.register_blueprint(product_routes)
+    app.register_blueprint(translation_routes)
+    app.register_blueprint(auth_routes)
+
+    logger.info("All blueprints registered successfully")
 
 
-@app_test.route("/")
+def register_error_handlers():
+    """
+    Register global error handlers.
+    """
+    from app.handlers.error_handlers import handle_generic_error
+    from werkzeug.exceptions import NotFound
+
+    @app.errorhandler(NotFound)
+    def handle_not_found(e):
+        """Handle 404 errors specifically."""
+        logger.warning(f"404 Not Found: {request.path}")
+        return jsonify(error="Not Found", path=request.path), 404
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        """Handle all uncaught exceptions."""
+        logger.error(f"Uncaught exception: {e}")
+        return handle_generic_error(e)
+
+
+def register_request_logging():
+    """
+    Register request/response logging hooks.
+    """
+    @app.before_request
+    def log_request():
+        """Log incoming requests."""
+        if app.url_map and request.path.startswith("/static/"):
+            logger_files.info(f"Static file request: {request.path}")
+
+    @app.after_request
+    def log_response(response):
+        """Log outgoing responses."""
+        if request.path.startswith("/static"):
+            logger_files.info(
+                f"Static file request completed: {request.path}, "
+                f"Status: {response.status_code}"
+            )
+        return response
+
+
+# Register all components
+register_blueprints()
+register_error_handlers()
+register_request_logging()
+
+
+@app.route("/")
 def hello_world():
+    """Health check endpoint."""
     return "Hello Butosklep!"
 
 
-@app_test.route("/generate-token", methods=["GET"])
-def get_token():
-    return generate_token()
+@app.route("/health")
+def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "service": "translate-descriptions"}
 
 
-@app_test.route("/proxy", methods=["POST"])
-def proxy_request():
-    return handle_proxy_request(request)
-
-
-@app_test.route("/vies", methods=["POST"])
-def vies_validation():
-    return handle_vies_request(request)
-
-
-@app_test.route("/product-data/<product_id>", methods=["GET", "POST"])
-@token_required
-def product_data(product_id):
-    request.view_args["product_id"] = product_id
-    return handle_product_data_request(request)
-
-
-@app_test.route("/product-info/<product_ids>", methods=["GET"])
-def product_info(product_ids):
-    return handle_product_info_request(request, product_ids)
-
-
-@app_test.route("/product-full-info/<product_id>", methods=["GET"])
-def product_full_info(product_id):
-    request.view_args["product_id"] = product_id
-    return handle_product_full_info_request(request)
-
-
-@app_test.route("/products-info/<int:results_page>", methods=["GET"])
-def products_info(results_page):
-    results_limit = request.args.get("results_limit", default=50, type=int)
-    if not (1 <= results_limit <= 100):
-        results_limit = 50
-
-    return handle_full_products(request, results_page, results_limit)
-
-
-@app_test.route("/translate", methods=["POST"])
-def translate():
-    return handle_translate_request(request)
-
-
-@app_test.route("/images/<product_id>", methods=["GET"])
-def get_images(product_id):
-    request.view_args["product_id"] = product_id
-    return handle_images_request(request)
-
-
-@app_test.route("/generate-description", methods=["POST"])
-@token_required
-def generate_description():
-    return handle_generate_description(request)
-
-
-@app_test.route("/rephrase-description", methods=["POST"])
-@token_required
-def rephrase_description():
-    return handle_rephrase_description(request)
+@app.route("/favicon.ico")
+def favicon():
+    """Handle favicon requests to prevent 404 errors."""
+    return "", 204
 
 
 if __name__ == "__main__":
-    app_test.run(host="0.0.0.0", port=5000)
+    logger.info("Starting Translate Descriptions application")
+    app.run(host="0.0.0.0", port=5000)

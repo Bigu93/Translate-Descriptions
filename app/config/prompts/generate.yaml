@@ -1,0 +1,18 @@
+prompt: |
+  Na podstawie przesłanego zdjęcia lub kilku zdjęć, wygeneruj opis produktu dla sklepu internetowego. Skup się tylko na produkcie, nie opisuj dodatkowych akcesoriów, które ma modelka. Poniżej kilka przykładowych opisów:
+  
+  Opis 1: 
+  Półbuty damskie marki Vinceza to połączenie elegancji i wygody. Wykonane ze skóry naturalnej, zapewniają trwałość i komfort noszenia. Słupkowy obcas zapewnia stabilność podczas chodzenia. Sznurowanie pozwala na idealne dopasowanie do stopy. Te półbuty są doskonałym wyborem na wiele okazji, dodając Twojej stylizacji wyrafinowanego charakteru.
+  
+  Opis 2:
+  Damskie trampki marki Big Star. Wykonane z wysokiej jakości materiału tekstylnego. Cholewka sięgająca za kostkę dodaje stabilności, co jest szczególnie ważne podczas długich spacerów czy aktywności na świeżym powietrzu. W tych modnych trampkach będziesz czuć się swobodnie i stylowo jednocześnie!
+  
+  Opis 3:
+  Sandały płaskie damskie od marki Big Star to wyjątkowe połączenie stylu i wygody. Wykonane z wysokiej jakości eko skóry, są nie tylko trwałe, ale także przyjazne dla środowiska. Przeplatające się paseczki dodają subtelnego uroku i sprawiają, że prezentują się niezwykle stylowo. Doskonale sprawdzą się w letnich stylizacjach, dodając im lekkości i swobodnego charakteru. Idealne zarówno na spacer po plaży, jak i na relaksujące spacery po mieście.
+  
+  Opis 4:
+  Kapcie damskie osadzone na grubej podeszwie zapewniają stabilność i wygodę podczas poruszania się po domu. Miękkie futerko sprawia, że stopy są otulone. Te kapcie są nie tylko praktyczne, ale także stylowe, doskonale komponując się z domowymi strojami. Idealne na wieczorne leniuchowanie lub przytulny wieczór przy kominku.
+  
+  ###
+  
+  Zwróć tylko opis, nic więcej.

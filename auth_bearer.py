@@ -1,123 +1,83 @@
-import mysql.connector
-import secrets
-from mysql.connector import Error
-from flask import request, jsonify, Blueprint
-from datetime import datetime, timedelta
-from logging_config import get_logger
-from functools import wraps
-from config import DB_NAME, DB_USER, DB_PASS
+"""
+Bearer token authentication routes using new architecture.
+"""
+from flask import Blueprint
+from app.core.services.auth_service import AuthService
+from app.infrastructure.database.bearer_repository import BearerRepository
+from app.infrastructure.database.connection_pool import get_connection_pool
+from app.presentation.web.middleware.auth_middleware import require_auth
+from app.infrastructure.logging.structured_logger import get_logger
+from app.handlers.error_handlers import handle_generic_error
 
-logger = get_logger("flask_auth")
+
+logger = get_logger("auth_bearer")
 auth_bp = Blueprint("auth", __name__)
 
 
-def create_db_connection():
+def get_auth_service() -> AuthService:
     """
-    Create connection to local database.
+    Get AuthService instance with dependency injection.
+
+    Returns:
+        Configured AuthService instance
     """
-    try:
-        connection = mysql.connector.connect(
-            host="127.0.0.1", database=DB_NAME, user=DB_USER, password=DB_PASS
-        )
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        logger.error(f"Error while connecting to MySQL: {e}")
-    return None
-
-
-def execute_query(query, params=None, fetch=True):
-    """
-    Execute a query and handle connection management.
-    """
-    connection = create_db_connection()
-    if not connection:
-        return None
-    try:
-        with connection.cursor(buffered=True) as cursor:
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-            connection.commit()
-            if fetch:
-                return cursor.fetchall()
-            else:
-                return cursor.rowcount
-    except Error as e:
-        logger.error(f"Error occurred during query execution: {e}")
-        return None
-    finally:
-        if connection.is_connected():
-            connection.close()
-
-
-def is_token_valid(token):
-    """
-    Checking if token from request is in database and not expired.
-    """
-    query = "SELECT expires_at FROM bearer WHERE token = %s AND expires_at > NOW()"
-    result = execute_query(query, (token,))
-    return bool(result)
-
-
-def require_auth_token(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            return jsonify({"error": "Authorization header is missing"}), 401
-
-        try:
-            auth_type, token = auth_header.split(None, 1)
-        except ValueError:
-            return jsonify({"error": "Invalid authorization header format"}), 401
-
-        if auth_type.lower() != "bearer":
-            return (
-                jsonify({"error": "Authorization header must start with Bearer"}),
-                401,
-            )
-
-        if not is_token_valid(token):
-            return jsonify({"error": "Invalid or expired token"}), 401
-
-        return f(*args, **kwargs)
-
-    return decorated_function
+    connection_pool = get_connection_pool()
+    bearer_repository = BearerRepository(connection_pool)
+    return AuthService(bearer_repository)
 
 
 @auth_bp.route("/generate_auth_token", methods=["POST"])
 def generate_auth_token():
-    token = secrets.token_urlsafe(32)
-    expires_at = datetime.now() + timedelta(days=30)
-    expiry_str = expires_at.strftime("%Y-%m-%d %H:%M:%S")
+    """
+    Generate a new bearer authentication token.
 
-    query = "INSERT INTO bearer (token, expires_at) VALUES (%s, %s)"
-    result = execute_query(query, (token, expiry_str), fetch=False)
+    Returns:
+        JSON response with generated token
+    """
+    try:
+        auth_service = get_auth_service()
+        token = auth_service.generate_bearer_token()
 
-    if result is not None:
-        return jsonify({"token": token, "expires_at": expires_at.isoformat()}), 201
-    else:
-        return jsonify({"error": "Failed to generate token"}), 500
+        logger.info(f"Generated new bearer token: {token[:10]}...")
+        return {"token": token["token"], "expires_at": token["expires_at"]}, 201
+
+    except Exception as e:
+        logger.error(f"Error generating bearer token: {e}")
+        return handle_generic_error(e)
 
 
 @auth_bp.route("/revoke_auth_token", methods=["POST"])
-@require_auth_token
+@require_auth(lambda token: get_auth_service().validate_token(token))
 def revoke_auth_token():
-    auth_header = request.headers.get("Authorization")
-    _, token = auth_header.split(None, 1)
+    """
+    Revoke a bearer authentication token.
 
-    query = "DELETE FROM bearer WHERE token = %s"
-    result = execute_query(query, (token,), fetch=False)
+    Returns:
+        JSON response with revocation status
+    """
+    try:
+        auth_service = get_auth_service()
+        success = auth_service.revoke_token()
 
-    if result:
-        return jsonify({"message": "Token revoked successfully"}), 200
-    else:
-        return jsonify({"error": "Token not found"}), 404
+        if success:
+            logger.info("Bearer token revoked successfully")
+            return {"message": "Token revoked successfully"}, 200
+        else:
+            logger.warning("Bearer token not found")
+            return {"error": "Token not found"}, 404
+
+    except Exception as e:
+        logger.error(f"Error revoking bearer token: {e}")
+        return handle_generic_error(e)
 
 
 @auth_bp.route("/protected", methods=["GET"])
-@require_auth_token
+@require_auth(lambda token: get_auth_service().validate_token(token))
 def protected_route():
-    return jsonify({"message": "You have access to this protected route"}), 200
+    """
+    Protected route that requires authentication.
+
+    Returns:
+        JSON response confirming access
+    """
+    return {"message": "You have access to this protected route"}, 200

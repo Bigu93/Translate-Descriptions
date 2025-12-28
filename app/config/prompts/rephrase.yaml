@@ -1,0 +1,6 @@
+prompt: |
+  Na podstawie podanego opisu przeformułuj go. Pozostaw znaczniki HTML bez zmian. Nie zmieniaj ani nie modyfikuj części którego zawierają treść o wyborze rozmiaru na podstawie tabeli rozmiarów i samej tabeli rozmiarów. Nie zmieniaj pierwotnego znaczenia/przeznaczenia tekstu.
+  
+  {additional_instructions}
+  
+  Zwróć tylko opis, nic więcej.

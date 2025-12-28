@@ -1,160 +1,113 @@
-import datetime
-import mysql.connector
-import secrets
-from mysql.connector import Error
-from flask import jsonify, Blueprint
-from config import DB_NAME, DB_USER, DB_PASS
-from logging_config import get_logger
-from auth_bearer import require_auth_token
+"""
+Token management routes using new architecture.
+"""
+from flask import Blueprint
+from app.core.services.token_service import TokenService
+from app.infrastructure.database.token_repository import TokenRepository
+from app.infrastructure.database.connection_pool import get_connection_pool
+from app.presentation.web.middleware.auth_middleware import require_auth
+from app.infrastructure.logging.structured_logger import get_logger
+from app.handlers.error_handlers import handle_generic_error
+
 
 logger = get_logger("tokens")
 token_bp = Blueprint("token", __name__)
 
 
-def create_db_connection():
+def get_token_service() -> TokenService:
     """
-    Create connection to local database.
-    """
-    try:
-        connection = mysql.connector.connect(
-            host="127.0.0.1", database=DB_NAME, user=DB_USER, password=DB_PASS
-        )
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        logger.error(f"Error while connecting to MySQL: {e}")
-    return None
+    Get TokenService instance with dependency injection.
 
-
-def execute_query(query, params=None, fetch=True):
+    Returns:
+        Configured TokenService instance
     """
-    Execute a query and handle connection management.
-    """
-    connection = create_db_connection()
-    if not connection:
-        return None
-    try:
-        with connection.cursor(buffered=True) as cursor:
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-            connection.commit()
-            if fetch:
-                return cursor.fetchall()
-            else:
-                return cursor.rowcount
-    except Error as e:
-        logger.error(f"Error occurred during query execution: {e}")
-        return None
-    finally:
-        if connection.is_connected():
-            connection.close()
+    connection_pool = get_connection_pool()
+    token_repository = TokenRepository(connection_pool)
+    return TokenService(token_repository)
 
 
 @token_bp.route("/generate-token", methods=["GET"])
 def generate_token():
-    token = secrets.token_hex(16)
-    expiry_time = (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-    query = "INSERT INTO api_tokens (token, expires_at) VALUES (%s, %s)"
-    result = execute_query(query, (token, expiry_time), fetch=False)
-    if result is not None:
-        logger.info(f"Generated new token: {token}, expires at: {expiry_time}")
-        return jsonify({"token": token})
-    else:
-        logger.error("Failed to generate token")
-        return jsonify({"error": "Failed to generate token"}), 500
+    """
+    Generate a new API token.
+
+    Returns:
+        JSON response with generated token
+    """
+    try:
+        token_service = get_token_service()
+        token = token_service.generate_token()
+
+        logger.info(f"Generated new token: {token[:10]}...")
+        return {"token": token}, 200
+
+    except Exception as e:
+        logger.error(f"Error generating token: {e}")
+        return handle_generic_error(e)
 
 
 @token_bp.route("/cleanup", methods=["POST"])
-@require_auth_token
+@require_auth(lambda token: get_token_service().validate_token(token))
 def cleanup_tokens():
     """
-    Remove expired tokens from the database and log the number of removed tokens.
+    Remove expired tokens from database.
+
+    Returns:
+        JSON response with cleanup results
     """
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = "DELETE FROM api_tokens WHERE expires_at <= %s"
-    affected_rows = execute_query(query, (current_time,), fetch=False)
-    if affected_rows is not None:
-        logger.info(f"Removed {affected_rows} expired tokens at {current_time}")
-        return jsonify({"message": f"Removed {affected_rows} expired tokens"}), 200
-    else:
-        logger.error("Failed to remove expired tokens")
-        return jsonify({"error": "Failed to remove expired tokens"}), 500
+    try:
+        token_service = get_token_service()
+        removed_count = token_service.cleanup_expired_tokens()
 
+        logger.info(f"Removed {removed_count} expired tokens")
+        return {"message": f"Removed {removed_count} expired tokens"}, 200
 
-def is_token_valid(token):
-    """
-    Checking if token from request is in database and not expired.
-    """
-    query = "SELECT expires_at FROM api_tokens WHERE token = %s AND expires_at > NOW()"
-    result = execute_query(query, (token,))
-    print(f"Token: {token}, wynik z bazy: {result}")
-    return bool(result)
-
-
-def obfuscate_token(token):
-    """Obfuscate the token by showing only the first and last few characters."""
-    if len(token) <= 8:
-        return "XD"
-    return f"{token[:1]}****{token[-1:]}"
+    except Exception as e:
+        logger.error(f"Error cleaning up tokens: {e}")
+        return handle_generic_error(e)
 
 
 @token_bp.route("/check", methods=["GET"])
-@require_auth_token
+@require_auth(lambda token: get_token_service().validate_token(token))
 def check_all_tokens():
-    query = "SELECT token, expires_at FROM api_tokens ORDER BY expires_at"
-    results = execute_query(query)
-    if results:
-        tokens = [
-            {
-                "token": obfuscate_token(token),
-                "expires_at": expires_at.strftime("%Y-%m-%d %H:%M:%S"),
-            }
-            for token, expires_at in results
-        ]
-        logger.info(f"Found {len(tokens)} tokens in the database")
-        return jsonify(tokens), 200
-    elif results is None:
-        logger.error("Error occurred while fetching tokens")
-        return jsonify({"error": "Error occurred while fetching tokens"}), 500
-    else:
-        logger.info("No tokens found in the database.")
-        return jsonify({"message": "No tokens found in the database"}), 200
+    """
+    Check all tokens in the database.
+
+    Returns:
+        JSON response with list of tokens
+    """
+    try:
+        token_service = get_token_service()
+        tokens = token_service.get_all_tokens()
+
+        logger.info(f"Found {len(tokens)} tokens in database")
+        return {"tokens": tokens}, 200
+
+    except Exception as e:
+        logger.error(f"Error checking tokens: {e}")
+        return handle_generic_error(e)
 
 
 @token_bp.route("/check_setup", methods=["GET"])
-@require_auth_token
+@require_auth(lambda token: get_token_service().validate_token(token))
 def check_database_setup():
-    connection = create_db_connection()
-    if not connection:
-        logger.error("Failed to connect to the database")
-        return jsonify({"error": "Failed to connect to the database"}), 500
+    """
+    Check if database setup is correct.
 
+    Returns:
+        JSON response with setup status
+    """
     try:
-        with connection.cursor(buffered=True) as cursor:
-            cursor.execute("SHOW TABLES LIKE 'api_tokens'")
-            if not cursor.fetchone():
-                logger.error("The api_tokens table does not exist")
-                return jsonify({"error": "The api_tokens table does not exist"}), 500
+        token_service = get_token_service()
+        is_valid = token_service.check_database_setup()
 
-            cursor.execute("DESCRIBE api_tokens")
-            columns = cursor.fetchall()
-            column_names = [column[0] for column in columns]
-            if "token" not in column_names or "expires_at" not in column_names:
-                logger.error("The api_tokens table structure is incorrect")
-                return (
-                    jsonify({"error": "The api_tokens table structure is incorrect"}),
-                    500,
-                )
+        if is_valid:
+            logger.info("Database setup appears to be correct")
+            return {"message": "Database setup appears to be correct"}, 200
+        else:
+            logger.error("Database setup is incorrect")
+            return {"error": "Database setup is incorrect"}, 500
 
-        logger.info("Database setup appears to be correct")
-        return jsonify({"message": "Database setup appears to be correct"}), 200
-    except Error as e:
+    except Exception as e:
         logger.error(f"Error checking database setup: {e}")
-        return jsonify({"error": f"Error checking database setup: {str(e)}"}), 500
-    finally:
-        if connection.is_connected():
-            connection.close()
+        return handle_generic_error(e)

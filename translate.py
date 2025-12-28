@@ -1,209 +1,78 @@
-import json
-from flask import jsonify
-from utils import (
-    parse_response_content_openai,
-    internal_server_error,
-    invalid_json_format,
-)
-from openai import OpenAI
-from config import OPENAI_API_KEY
-from config import (
-    PROMPT_PRODUCT_NAME,
-    PROMPT_PRODUCT_DESC,
-    PROMPT_META_TITLE,
-    PROMPT_META_DESC,
-    PROMPT_KEYWORDS,
-    OPENAI_MODEL,
-)
-
-TRANSLATE_TYPES = {
-    "productName": PROMPT_PRODUCT_NAME,
-    "productLongDescription": PROMPT_PRODUCT_DESC,
-    "productMetaTitle": PROMPT_META_TITLE,
-    "productMetaDescription": PROMPT_META_DESC,
-    "productMetaKeywords": PROMPT_KEYWORDS,
-}
-
-LANGUAGE_MAP = {
-    "pol": "Polish",
-    "bul": "Bulgarian",
-    "cze": "Czech",
-    "dut": "Dutch",
-    "eng": "English",
-    "est": "Estonian",
-    "fre": "French",
-    "ger": "German",
-    "gre": "Greek",
-    "hun": "Hungarian",
-    "ita": "Italian",
-    "lav": "Latvian",
-    "lit": "Lithuanian",
-    "rum": "Romanian",
-    "scr": "Croatian",
-    "slo": "Slovak",
-    "slv": "Slovenian",
-    "spa": "Spanish",
-    "ukr": "Ukrainian",
-}
-
-REVERSE_LANGUAGE_MAP = {v: k for k, v in LANGUAGE_MAP.items()}
-CLIENT = OpenAI(api_key=OPENAI_API_KEY)
+"""
+Translation routes using new architecture.
+"""
+from flask import Blueprint, request
+from app.core.services.translation_service import TranslationService
+from app.core.strategies.openai_strategy import OpenAIStrategy
+from app.config.settings import get_openai_api_key, get_openai_model
+from app.infrastructure.logging.structured_logger import get_logger
+from app.handlers.error_handlers import handle_generic_error
 
 
-def handle_translate_request(request):
+logger = get_logger("translate")
+translate_bp = Blueprint("translate", __name__)
+
+
+def get_translation_service() -> TranslationService:
     """
-    Handler for translation request.
+    Get TranslationService instance with dependency injection.
+
+    Returns:
+        Configured TranslationService instance
     """
-    if request.method != "POST":
-        return jsonify({"error": "Unsupported method!"}), 400
-
-    if request.method == "POST":
-        data = request.json
-
-        if not data:
-            return jsonify({"error": "Empty payload!"}), 400
-
-        if "params" not in data or "products" not in data["params"]:
-            return jsonify({"error": "Unsupported JSON structure!"}), 400
-
-        try:
-            target_languages = get_target_languages(data)
-            polish_content = extract_polish_content(data)
-            category = data["params"]["products"][0]["productInfo"]["category"]
-            name = data["params"]["products"][0]["productInfo"]["name"]
-            desc = data["params"]["products"][0]["productInfo"]["description"]
-            translations = []
-
-            for content in polish_content:
-                location_translations = {}
-                for field, text in content["texts"].items():
-                    if text:
-                        polish_text = (
-                            desc
-                            if field == "productLongDescription"
-                            or field == "productMetaDescription"
-                            or field == "productMetaKeywords"
-                            else name
-                        )
-
-                        translated_texts = translate_text(
-                            polish_text, target_languages, field, category
-                        )
-                        for (
-                            target_lang_name,
-                            translated_text,
-                        ) in translated_texts.items():
-                            target_lang_code = REVERSE_LANGUAGE_MAP.get(
-                                target_lang_name, target_lang_name
-                            )
-                            if target_lang_code not in location_translations:
-                                location_translations[target_lang_code] = {}
-                            location_translations[target_lang_code][
-                                field
-                            ] = translated_text
-
-                translations.append(
-                    {
-                        "location": content["location"],
-                        "translated_texts": location_translations,
-                    }
-                )
-
-            updated_data = update_json(data, translations)
-            return jsonify(updated_data), 200
-
-        except Exception as e:
-            print("error: ", str(e))
-            return jsonify({"error": str(e)}), 500
+    api_key = get_openai_api_key()
+    model = get_openai_model()
+    strategy = OpenAIStrategy(api_key=api_key, model=model)
+    return TranslationService(strategy)
 
 
-def extract_polish_content(data):
+@translate_bp.route("/translate", methods=["POST"])
+def translate():
     """
-    Extract Polish content and its location within the JSON.
-    """
-    polish_content = []
-    for product in data["params"]["products"]:
-        for description in product["productDescriptionsLangData"]:
-            if description["langId"] == "pol":
-                content_to_translate = {}
-                for key, value in description.items():
-                    if key not in ["langId", "shopId"]:
-                        content_to_translate[key] = value
-                if content_to_translate:
-                    polish_content.append(
-                        {
-                            "location": (product, description),
-                            "texts": content_to_translate,
-                        }
-                    )
-    return polish_content
+    Handle translation request.
 
-
-def get_target_languages(data):
+    Returns:
+        JSON response with translations
     """
-    Extract a unique set of languages to translate to, excluding 'pol', and map them to full language names.
-    """
-    languages = set()
-    for product in data["params"]["products"]:
-        for description in product["productDescriptionsLangData"]:
-            lang_id = description.get("langId")
-            if lang_id and lang_id != "pol":
-                languages.add(LANGUAGE_MAP.get(lang_id, lang_id))
-    return languages
-
-
-def translate_text(text, target_languages, content_type, category):
-    """
-    Translate text to the target language using an API.
-    """
-    model = OPENAI_MODEL
-    messages = []
-    system_prompt = TRANSLATE_TYPES.get(content_type, "Invalid content_type")
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {
-            "role": "user",
-            "content": f"[{text}] Langs:[{','.join(target_languages)}] Category:[{category}]",
-        },
-    ]
-
     try:
-        response = CLIENT.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=0.6,
-            max_tokens=4096,
+        data = request.get_json()
+        if not data:
+            return {"error": "Empty payload!"}, 400
+
+        text_to_translate = data.get("userPrompt")
+        translate_type = data.get("translateType")
+        langs_list = data.get("languages")
+
+        if not text_to_translate:
+            return {"error": "userPrompt is required"}, 400
+
+        if not translate_type:
+            return {"error": "translateType is required"}, 400
+
+        if not langs_list or not isinstance(langs_list, list):
+            return {"error": "languages list is required"}, 400
+
+        valid_types = ["name", "description", "meta_title", "meta_description", "keywords"]
+        if translate_type not in valid_types:
+            return {"error": f"Invalid translateType. Must be one of: {', '.join(valid_types)}"}, 400
+
+        translation_service = get_translation_service()
+        translations, tokens_used = translation_service.translate(
+            text=text_to_translate,
+            translate_type=translate_type,
+            languages=langs_list
         )
-        response_content = response.choices[0].message.content.strip()
-        translation = parse_response_content_openai(response_content)
-        return translation
-    except json.JSONDecodeError as e:
-        invalid_json_format(e, response_content)
+
+        logger.info(
+            f"Translation completed: type={translate_type}, "
+            f"languages={len(langs_list)}, tokens_used={tokens_used}"
+        )
+
+        return {
+            "translations": translations,
+            "tokens_used": tokens_used
+        }, 200
+
     except Exception as e:
-        internal_server_error(e)
-
-
-def update_json(data, translations):
-    """
-    Update the original JSON structure with the translations.
-    """
-    for translation in translations:
-        product, original_description = translation["location"]
-        for target_lang, translated_texts in translation["translated_texts"].items():
-            found = False
-            for description in product["productDescriptionsLangData"]:
-                if (
-                    description["langId"] == target_lang
-                    and description["shopId"] == original_description["shopId"]
-                ):
-                    description.update(translated_texts)
-                    found = True
-                    break
-            if not found:
-                new_translation = {
-                    "langId": target_lang,
-                    "shopId": original_description["shopId"],
-                    **translated_texts,
-                }
-                product["productDescriptionsLangData"].append(new_translation)
-    return data
+        logger.error(f"Error in translation: {e}")
+        return handle_generic_error(e)
