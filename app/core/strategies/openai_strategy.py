@@ -202,7 +202,7 @@ class OpenAIStrategy(TranslationStrategy):
         """
         # Log the raw response for debugging
         if self._logger:
-            self._logger.debug(f"Raw OpenAI response content: {repr(response_content)}")
+            self._logger.warning(f"Raw OpenAI response content: {repr(response_content)}")
         
         try:
             # Try to parse as JSON directly
@@ -231,7 +231,7 @@ class OpenAIStrategy(TranslationStrategy):
                 json_str = response_content[json_start:json_end]
                 
                 if self._logger:
-                    self._logger.debug(f"Extracted JSON substring: {repr(json_str)}")
+                    self._logger.warning(f"Extracted JSON substring: {repr(json_str)}")
                 
                 parsed = json.loads(json_str)
                 
