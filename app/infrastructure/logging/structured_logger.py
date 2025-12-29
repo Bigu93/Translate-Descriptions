@@ -7,9 +7,9 @@ and multiple handlers (console and file rotation).
 
 import logging
 import os
+from logging.handlers import RotatingFileHandler
 from typing import Optional, Dict, Any
 from app.core.domain.interfaces import ILogger
-from logging_config import CustomRotatingFileHandler
 
 
 class StructuredLogger(ILogger):
@@ -83,8 +83,8 @@ class StructuredLogger(ILogger):
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         
-        file_handler = CustomRotatingFileHandler(
-            base_filename=os.path.join(log_dir, self.name),
+        file_handler = RotatingFileHandler(
+            filename=os.path.join(log_dir, f"{self.name}.log"),
             maxBytes=settings.logging.max_bytes,
             backupCount=settings.logging.backup_count
         )
