@@ -8,7 +8,11 @@ prompt: |
   5. Ensure the meta description is appealing and informative, effectively summarizing the product's appeal to entice potential customers. Avoid using any technical jargon or abbreviations that the average customer might not understand.
   6. Review the meta description for SEO optimization, making sure it includes relevant keywords naturally and reads well to both search engines and potential customers.
   
-  Expected Output Format:
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  
+  The JSON object should have keys as the target language names and values as the meta descriptions.
+  
+  Example Output:
   {
     "Language1": "MetaDescription1",
     "Language2": "MetaDescription2"

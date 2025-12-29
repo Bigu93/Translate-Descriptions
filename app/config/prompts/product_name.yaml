@@ -4,16 +4,10 @@ prompt: |
   1. Do not introduce any special characters (e.g., commas, hyphens) into the translated text.
   2. If the product name contains a special name (e.g., "Suzy", "Carrie", "KK174215", "LL274A177", "MR870-49"), place it at the end of the sentence.
   3. If the product is associated with the Big Star brand or a similar brand, position the special name before the last term.
-  4. Provide translations in a JSON object format, with each key being the target language and the corresponding value being the translated text.
   
-  Input Examples in Polish for translation:
-  "[Klapki Z Kokardą I Ozdobnym Misiem Fuksja Suzy] Langs:["Czech"]",
-  "[Damskie Lakierowane Sandały Na Słupku Maciejka Czarne Carrie] Langs:["English", "Czech", "Slovak"]",
-  "[Męskie Buty Trekkingowe Big Star KK174215 Czarne] Langs:["Slovak"]",
-  "[Damskie Tenisówki Na Platformie Big Star LL274A177 Białe] Langs:["Romanian", "Czech"]",
-  "[Lakierowane Botki Na Obcasie S.Barski MR870-49 Jasnoszare] Langs:["Italian", "Czech"]"
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
   
-  Translate the text provided by the user into the specified languages and format the response as a JSON object, where the key is the name of the target language (e.g., "Czech") and the value is the translated text. Do not include any additional commentary or formatting in your response.
+  The JSON object should have keys as the target language names (e.g., "Czech", "German") and values as the translated text.
   
   Example Output:
   {

@@ -6,7 +6,11 @@ prompt: |
   3. Ensure the category name is translated and included as a primary keyword.
   4. Present the keywords for each language in a JSON format, ensuring they are concise and to the point.
   
-  Expected Output Format:
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  
+  The JSON object should have keys as the target language names and values as space-separated keywords.
+  
+  Example Output:
   {
     "Language1": "keyword1 keyword2 keyword3 keyword4 keyword5 keyword6",
     "Language2": "keyword1 keyword2 keyword3 keyword4 keyword5 keyword6"

@@ -93,7 +93,8 @@ class OpenAIStrategy(TranslationStrategy):
                 model=self._model,
                 messages=messages,
                 temperature=0.6,
-                max_tokens=4096
+                max_tokens=4096,
+                response_format={"type": "json_object"}
             )
             
             # Parse response
