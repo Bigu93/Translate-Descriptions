@@ -200,6 +200,10 @@ class OpenAIStrategy(TranslationStrategy):
         Returns:
             Dictionary mapping language codes to translated text
         """
+        # Log the raw response for debugging
+        if self._logger:
+            self._logger.debug(f"Raw OpenAI response content: {repr(response_content)}")
+        
         try:
             # Try to parse as JSON directly
             parsed = json.loads(response_content)
@@ -215,12 +219,20 @@ class OpenAIStrategy(TranslationStrategy):
             
             return translations
             
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            # Log the JSON decode error
+            if self._logger:
+                self._logger.warning(f"Direct JSON parse failed: {e}")
+            
             # Try to extract JSON from response
             try:
                 json_start = response_content.index("{")
                 json_end = response_content.rindex("}") + 1
                 json_str = response_content[json_start:json_end]
+                
+                if self._logger:
+                    self._logger.debug(f"Extracted JSON substring: {repr(json_str)}")
+                
                 parsed = json.loads(json_str)
                 
                 # Convert language names back to codes
@@ -233,10 +245,22 @@ class OpenAIStrategy(TranslationStrategy):
                 
                 return translations
                 
-            except (ValueError, json.JSONDecodeError) as e:
+            except ValueError as e:
+                # This is the "substring not found" error
                 if self._logger:
-                    self._logger.error(f"Failed to parse JSON response: {e}")
-                raise TranslationError(f"Failed to parse translation response: {e}") from e
+                    self._logger.error(
+                        f"Failed to find JSON delimiters in response. "
+                        f"Response length: {len(response_content)}. "
+                        f"Error: {e}"
+                    )
+                raise TranslationError(f"Failed to parse translation response: substring not found") from e
+            except json.JSONDecodeError as e:
+                if self._logger:
+                    self._logger.error(
+                        f"Found JSON delimiters but failed to parse JSON. "
+                        f"Error: {e}"
+                    )
+                raise TranslationError(f"Failed to parse translation response: invalid JSON") from e
     
     def get_supported_languages(self) -> List[str]:
         """Return list of supported language codes.
