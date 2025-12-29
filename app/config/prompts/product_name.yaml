@@ -5,7 +5,7 @@ prompt: |
   2. If the product name contains a special name (e.g., "Suzy", "Carrie", "KK174215", "LL274A177", "MR870-49"), place it at the end of the sentence.
   3. If the product is associated with the Big Star brand or a similar brand, position the special name before the last term.
   
-  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON. Your entire response must be valid json.
   
   The JSON object should have keys as the target language names (e.g., "Czech", "German") and values as the translated text.
   

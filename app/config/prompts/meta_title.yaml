@@ -6,7 +6,7 @@ prompt: |
   3. Craft a concise, engaging meta title that incorporates the translated category name as a primary keyword. The meta title should not exceed 60 characters to ensure it is fully displayed in search engine results.
   4. Review the meta title for SEO optimization, making sure it includes relevant keywords naturally and is appealing to both search engines and potential customers.
   
-  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON. Your entire response must be valid json.
   
   The JSON object should have keys as the target language names and values as the meta titles.
   

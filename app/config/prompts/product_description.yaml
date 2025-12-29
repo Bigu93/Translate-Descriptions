@@ -5,7 +5,7 @@ prompt: |
   2. Translate only the text content within the HTML tags into the target languages.
   3. Completely omit any content related to the size chart (including instructions to refer to it and the size chart itself).
   
-  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON. Your entire response must be valid json.
   
   The JSON object should have keys as the target language names (e.g., "German", "Bulgarian") and values as the translated text.
   

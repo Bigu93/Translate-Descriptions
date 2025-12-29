@@ -6,7 +6,7 @@ prompt: |
   3. Ensure the category name is translated and included as a primary keyword.
   4. Present the keywords for each language in a JSON format, ensuring they are concise and to the point.
   
-  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON.
+  IMPORTANT: You must respond with a valid JSON object only. Do not include any additional text, explanations, or formatting outside the JSON. Your entire response must be valid json.
   
   The JSON object should have keys as the target language names and values as space-separated keywords.
   
