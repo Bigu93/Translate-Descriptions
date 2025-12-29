@@ -59,8 +59,13 @@ class ProductHandlers:
             if product_id is None or shop_id is None:
                 return jsonify(error="product_id and shop_id are required"), 400
 
-            # Parse fields into a list
-            field_list = [f.strip() for f in fields.split(",") if f.strip()]
+            # Parse fields into a list (handle both string and list input)
+            if isinstance(fields, str):
+                field_list = [f.strip() for f in fields.split(",") if f.strip()]
+            elif isinstance(fields, list):
+                field_list = [str(f).strip() for f in fields if str(f).strip()]
+            else:
+                field_list = []
 
             params = [product_id, shop_id]
             status_code, reason, response_data = self.products_client.get_product_description(params)
