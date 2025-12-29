@@ -228,11 +228,13 @@ def ensure_initialized():
     This implements lazy initialization pattern for Passenger compatibility.
     """
     # DIAGNOSTIC: Log when ensure_initialized is called
-    logger.info(f"[DIAGNOSTIC] ensure_initialized called for path: {request.path}")
+    logger.info(f"[DIAGNOSTIC] ensure_initialized called for path: {request.path}, method: {request.method}")
     
-    # Skip initialization for static files and health check endpoints
-    if request.path.startswith("/static/") or request.path in ["/health", "/", "/favicon.ico"]:
-        logger.info(f"[DIAGNOSTIC] Skipping initialization for path: {request.path}")
+    # Skip initialization for static files, health check endpoints, and OPTIONS preflight requests
+    if (request.path.startswith("/static/") or
+        request.path in ["/health", "/", "/favicon.ico"] or
+        request.method == "OPTIONS"):
+        logger.info(f"[DIAGNOSTIC] Skipping initialization for path: {request.path}, method: {request.method}")
         return
     
     # DIAGNOSTIC: Log before attempting to initialize handlers
