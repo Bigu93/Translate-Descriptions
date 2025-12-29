@@ -72,13 +72,13 @@ def initialize_services():
     # Create cache
     cache = get_cache_provider()
 
-    # Create translation strategy
-    openai_api_key = get_openai_api_key()
-    openai_model = get_openai_model()
-    translation_strategy = OpenAIStrategy(api_key=openai_api_key, model=openai_model)
-
     # Get logger for services
     service_logger = get_logger("services")
+
+    # Create translation strategy with logger
+    openai_api_key = get_openai_api_key()
+    openai_model = get_openai_model()
+    translation_strategy = OpenAIStrategy(api_key=openai_api_key, model=openai_model, logger=service_logger)
 
     # Create services
     product_service = ProductService(products_client)
