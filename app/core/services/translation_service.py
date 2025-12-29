@@ -5,7 +5,7 @@ This module implements the business logic for translation operations,
 using the Strategy Pattern for pluggable translation providers.
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from app.core.domain.interfaces import ITranslationService
 from app.core.domain.models import TranslationRequest, TranslationResponse
 from app.core.domain.exceptions import TranslationError
@@ -120,6 +120,68 @@ class TranslationService(ITranslationService):
         
         response = self.translate_product_content(request)
         return response.translations
+    
+    def translate(
+        self,
+        text: str,
+        translate_type: str,
+        languages: List[str],
+        category: Optional[str] = None
+    ) -> Tuple[Dict[str, str], int]:
+        """Translate text to target languages (wrapper for backward compatibility).
+        
+        Args:
+            text: Text to translate
+            translate_type: Type of content (name, description, etc.)
+            languages: List of target language codes
+            category: Optional product category for context
+            
+        Returns:
+            Tuple of (translations dictionary, tokens_used)
+        """
+        translations = self.translate_text(
+            text=text,
+            target_languages=languages,
+            content_type=translate_type,
+            category=category
+        )
+        return translations, 0  # tokens_used is tracked by strategy
+    
+    def generate_description(
+        self,
+        product_name: str,
+        languages: List[str]
+    ) -> Tuple[Dict[str, str], int]:
+        """Generate product descriptions from product name.
+        
+        Args:
+            product_name: Product name to base description on
+            languages: List of target language codes
+            
+        Returns:
+            Tuple of (descriptions dictionary, tokens_used)
+        """
+        # This would need to be implemented with a generation strategy
+        # For now, return empty dict
+        return {}, 0
+    
+    def rephrase_description(
+        self,
+        description: str,
+        languages: List[str]
+    ) -> Tuple[Dict[str, str], int]:
+        """Rephrase existing descriptions.
+        
+        Args:
+            description: Description to rephrase
+            languages: List of target language codes
+            
+        Returns:
+            Tuple of (rephrased descriptions dictionary, tokens_used)
+        """
+        # This would need to be implemented with a rephrase strategy
+        # For now, return empty dict
+        return {}, 0
     
     def _generate_cache_key(self, request: TranslationRequest) -> str:
         """Generate cache key for translation request.

@@ -218,3 +218,132 @@ class TranslationHandlers:
         except Exception as e:
             logger.error(f"Error translating product name: {e}")
             return handle_generic_error(e)
+
+    def translate_product(self) -> Tuple[Any, int]:
+        """
+        Handle product translation request with complex payload structure.
+
+        Expected payload:
+        {
+            "params": {
+                "products": [
+                    {
+                        "productIdent": {"productIdentType": "id", "identValue": "52"},
+                        "productInfo": {"description": "...", "name": "...", "category": "..."},
+                        "productDescriptionsLangData": [...]
+                    }
+                ]
+            }
+        }
+
+        Returns:
+            Tuple of (response_data, status_code)
+        """
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify(error="Request body is required"), 400
+
+            params = data.get("params")
+            if not params:
+                return jsonify(error="params is required"), 400
+
+            products = params.get("products")
+            if not products or not isinstance(products, list):
+                return jsonify(error="params.products list is required"), 400
+
+            if len(products) == 0:
+                return jsonify(error="params.products list cannot be empty"), 400
+
+            # Process first product (as per client expectation)
+            product = products[0]
+            product_info = product.get("productInfo", {})
+            existing_lang_data = product.get("productDescriptionsLangData", [])
+
+            # Extract source data for translation
+            source_name = product_info.get("name", "")
+            source_description = product_info.get("description", "")
+            category = product_info.get("category", "")
+
+            if not source_name and not source_description:
+                return jsonify(error="At least one of name or description is required in productInfo"), 400
+
+            # Get languages from existing productDescriptionsLangData
+            languages = []
+            for lang_data in existing_lang_data:
+                lang_id = lang_data.get("langId")
+                if lang_id and lang_id not in languages:
+                    languages.append(lang_id)
+
+            if not languages:
+                return jsonify(error="No languages found in productDescriptionsLangData"), 400
+
+            # Translate name if present
+            translated_names = {}
+            if source_name:
+                name_translations, name_tokens = self.translation_service.translate(
+                    text=source_name,
+                    translate_type="name",
+                    languages=languages
+                )
+                translated_names = name_translations
+
+            # Translate description if present
+            translated_descriptions = {}
+            if source_description:
+                desc_translations, desc_tokens = self.translation_service.translate(
+                    text=source_description,
+                    translate_type="description",
+                    languages=languages
+                )
+                translated_descriptions = desc_translations
+
+            # Build response in the expected format
+            result = {
+                "params": {
+                    "products": [
+                        {
+                            "productIdent": product.get("productIdent"),
+                            "productInfo": product_info,
+                            "productDescriptionsLangData": []
+                        }
+                    ]
+                }
+            }
+
+            # Populate translated data for each language
+            for lang_data in existing_lang_data:
+                lang_id = lang_data.get("langId")
+                shop_id = lang_data.get("shopId", 0)
+
+                translated_lang_data = {
+                    "langId": lang_id,
+                    "shopId": shop_id
+                }
+
+                # Add translated name
+                if lang_id in translated_names:
+                    translated_lang_data["productName"] = translated_names[lang_id]
+
+                # Add translated description
+                if lang_id in translated_descriptions:
+                    translated_lang_data["productLongDescription"] = translated_descriptions[lang_id]
+
+                # Copy any other fields from original lang_data
+                for key, value in lang_data.items():
+                    if key not in ["langId", "shopId", "productName", "productLongDescription"]:
+                        translated_lang_data[key] = value
+
+                result["params"]["products"][0]["productDescriptionsLangData"].append(translated_lang_data)
+
+            logger.info(
+                f"Product translation completed: "
+                f"product_id={product.get('productIdent', {}).get('identValue')}, "
+                f"languages={len(languages)}"
+            )
+
+            return jsonify(result), 200
+
+        except Exception as e:
+            logger.error(f"Error translating product: {e}")
+            return handle_generic_error(e)

@@ -1005,7 +1005,7 @@
 
   const translateProductData = async () => {
     const payload = await constructTranslationPayload();
-    const apiEndpoint = `${API_BASE_URL}/api/translations/translate`;
+    const apiEndpoint = `${API_BASE_URL}/api/translations/translate-product`;
 
     toggleLoadingOverlay(true);
     try {

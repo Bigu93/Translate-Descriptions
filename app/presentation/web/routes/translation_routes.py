@@ -57,4 +57,12 @@ def create_translation_routes() -> Blueprint:
         registry = get_handler_registry()
         return registry.translation_handlers.translate_product_name()
 
+    @blueprint.route("/translate-product", methods=["POST"])
+    @log_request_response
+    @log_performance
+    def translate_product():
+        """Translate product data with complex payload structure."""
+        registry = get_handler_registry()
+        return registry.translation_handlers.translate_product()
+
     return blueprint
