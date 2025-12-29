@@ -1,7 +1,8 @@
 """
 Main application entry point using new architecture.
 """
-from flask import Flask, request, send_from_directory
+import threading
+from flask import Flask, request, send_from_directory, jsonify
 from flask_cors import CORS
 from app.config.settings import get_allowed_origins
 from app.infrastructure.logging.structured_logger import get_logger
@@ -41,6 +42,10 @@ logger_files = get_logger("static_files")
 
 # Create Flask app
 app = Flask(__name__)
+
+# Track initialization status for lazy loading
+_services_initialized = False
+_initialization_lock = threading.Lock()
 
 # Configure CORS
 allowed_origins = get_allowed_origins()
@@ -93,25 +98,44 @@ def initialize_services():
 def register_blueprints():
     """
     Register all route blueprints.
+    Uses lazy initialization - only initializes services once on first request.
     """
-    products_client, product_service, translation_service, auth_service, token_service = initialize_services()
+    global _services_initialized
+    
+    # Return early if already initialized
+    if _services_initialized:
+        return
+    
+    # Use lock to prevent race conditions during initialization
+    with _initialization_lock:
+        # Double-check pattern in case another thread initialized while waiting for lock
+        if _services_initialized:
+            return
+        
+        try:
+            logger.info("Initializing services...")
+            products_client, product_service, translation_service, auth_service, token_service = initialize_services()
 
-    # Create handlers
-    product_handlers = ProductHandlers(products_client)
-    translation_handlers = TranslationHandlers(translation_service)
-    auth_handlers = AuthHandlers(auth_service, token_service)
+            # Create handlers
+            product_handlers = ProductHandlers(products_client)
+            translation_handlers = TranslationHandlers(translation_service)
+            auth_handlers = AuthHandlers(auth_service, token_service)
 
-    # Create routes
-    product_routes = create_product_routes(product_handlers)
-    translation_routes = create_translation_routes(translation_handlers)
-    auth_routes = create_auth_routes(auth_handlers)
+            # Create routes
+            product_routes = create_product_routes(product_handlers)
+            translation_routes = create_translation_routes(translation_handlers)
+            auth_routes = create_auth_routes(auth_handlers)
 
-    # Register blueprints
-    app.register_blueprint(product_routes)
-    app.register_blueprint(translation_routes)
-    app.register_blueprint(auth_routes)
+            # Register blueprints
+            app.register_blueprint(product_routes)
+            app.register_blueprint(translation_routes)
+            app.register_blueprint(auth_routes)
 
-    logger.info("All blueprints registered successfully")
+            _services_initialized = True
+            logger.info("All blueprints registered successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize services: {e}")
+            raise
 
 
 def register_error_handlers():
@@ -155,10 +179,23 @@ def register_request_logging():
         return response
 
 
-# Register all components
-register_blueprints()
+# Register error handlers and request logging (these are safe to initialize at module level)
 register_error_handlers()
 register_request_logging()
+
+# Add before_request handler for lazy initialization
+@app.before_request
+def ensure_initialized():
+    """
+    Ensure services are initialized before processing requests.
+    This implements lazy initialization pattern for Passenger compatibility.
+    """
+    # Skip initialization for static files and health check endpoints
+    if request.path.startswith("/static/") or request.path in ["/health", "/", "/favicon.ico"]:
+        return
+    
+    # Initialize services on first non-static request
+    register_blueprints()
 
 
 @app.route("/")
