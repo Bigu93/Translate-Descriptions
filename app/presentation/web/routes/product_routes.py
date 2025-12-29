@@ -25,7 +25,7 @@ def create_product_routes() -> Blueprint:
     """
     blueprint = Blueprint("products", __name__, url_prefix="/api/products")
 
-    @blueprint.route("/descriptions", methods=["GET"])
+    @blueprint.route("/descriptions", methods=["GET", "POST"])
     @log_request_response
     @log_performance
     def get_product_description():
@@ -61,7 +61,7 @@ def create_product_routes() -> Blueprint:
     @log_request_response
     @log_performance
     def get_product_images():
-        """Get product images."""
+        """Get product images by product ID."""
         registry = get_handler_registry()
         return registry.product_handlers.get_product_images()
 

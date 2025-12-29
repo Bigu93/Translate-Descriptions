@@ -44,15 +44,9 @@ logger_files = get_logger("static_files")
 # Create Flask app
 app = Flask(__name__)
 
-# DIAGNOSTIC: Log app creation
-logger.info("[DIAGNOSTIC] Flask app created")
-
 # Track initialization status for lazy loading
 _services_initialized = False
 _initialization_lock = threading.Lock()
-
-# DIAGNOSTIC: Log initialization state
-logger.info(f"[DIAGNOSTIC] Initial _services_initialized state: {_services_initialized}")
 
 # Configure CORS
 allowed_origins = get_allowed_origins()
@@ -117,17 +111,9 @@ def register_blueprints():
     auth_routes = create_auth_routes()
     
     # Register blueprints with the Flask app
-    logger.info("About to register product_routes blueprint")
     app.register_blueprint(product_routes)
-    logger.info("product_routes blueprint registered successfully")
-    
-    logger.info("About to register translation_routes blueprint")
     app.register_blueprint(translation_routes)
-    logger.info("translation_routes blueprint registered successfully")
-    
-    logger.info("About to register auth_routes blueprint")
     app.register_blueprint(auth_routes)
-    logger.info("auth_routes blueprint registered successfully")
     
     logger.info("All blueprints registered successfully at module load time")
 
@@ -220,32 +206,20 @@ register_request_logging()
 register_blueprints()
 
 # Add before_request handler for lazy handler initialization
-logger.info("[DIAGNOSTIC] About to register @app.before_request handler")
 @app.before_request
 def ensure_initialized():
     """
     Ensure handlers are initialized before processing requests.
     This implements lazy initialization pattern for Passenger compatibility.
     """
-    # DIAGNOSTIC: Log when ensure_initialized is called
-    logger.info(f"[DIAGNOSTIC] ensure_initialized called for path: {request.path}, method: {request.method}")
-    
     # Skip initialization for static files, health check endpoints, and OPTIONS preflight requests
     if (request.path.startswith("/static/") or
         request.path in ["/health", "/", "/favicon.ico"] or
         request.method == "OPTIONS"):
-        logger.info(f"[DIAGNOSTIC] Skipping initialization for path: {request.path}, method: {request.method}")
         return
-    
-    # DIAGNOSTIC: Log before attempting to initialize handlers
-    logger.info(f"[DIAGNOSTIC] About to call initialize_handlers() for path: {request.path}")
-    logger.info(f"[DIAGNOSTIC] Handlers already initialized: {_services_initialized}")
     
     # Initialize handlers on first non-static request
     initialize_handlers()
-    
-    # DIAGNOSTIC: Log after attempting to initialize handlers
-    logger.info(f"[DIAGNOSTIC] initialize_handlers() completed for path: {request.path}")
 
 
 @app.route("/")
@@ -265,9 +239,6 @@ def favicon():
     """Handle favicon requests to prevent 404 errors."""
     return "", 204
 
-
-# DIAGNOSTIC: Log when app.py module is fully loaded
-logger.info("[DIAGNOSTIC] app.py module fully loaded")
 
 if __name__ == "__main__":
     logger.info("Starting Translate Descriptions application")

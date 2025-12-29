@@ -36,6 +36,8 @@ class ProductHandlers:
     def get_product_description(self) -> Tuple[Any, int]:
         """
         Handle request to get product descriptions.
+        
+        Updated to support new API structure with product_id, shop_id, lang_id, fields.
 
         Returns:
             Tuple of (response_data, status_code)
@@ -51,16 +53,21 @@ class ProductHandlers:
 
             product_id = data.get("product_id")
             shop_id = data.get("shop_id")
+            lang_id = data.get("lang_id", "all")
+            fields = data.get("fields", "")
 
             if not product_id or not shop_id:
                 return jsonify(error="product_id and shop_id are required"), 400
+
+            # Parse fields into a list
+            field_list = [f.strip() for f in fields.split(",") if f.strip()]
 
             params = [product_id, shop_id]
             status_code, reason, response_data = self.products_client.get_product_description(params)
 
             parsed_data = parse_product_data(response_data)
 
-            logger.info(f"Retrieved product description for product_id: {product_id}")
+            logger.info(f"Retrieved product description for product_id: {product_id}, lang_id: {lang_id}")
             return jsonify(parsed_data), status_code
 
         except Exception as e:
@@ -166,6 +173,8 @@ class ProductHandlers:
     def get_product_images(self) -> Tuple[Any, int]:
         """
         Handle request to get product images.
+        
+        Updated to accept product_id in request body.
 
         Returns:
             Tuple of (response_data, status_code)
@@ -179,12 +188,16 @@ class ProductHandlers:
             if not data:
                 return jsonify(error="Request body is required"), 400
 
+            product_id = data.get("product_id")
+            if not product_id:
+                return jsonify(error="product_id is required"), 400
+
             status_code, reason, response_data = self.products_client.get_product_images(data)
 
             parsed_data = parse_product_images(response_data)
 
-            logger.info("Retrieved product images")
-            return parsed_data, status_code
+            logger.info(f"Retrieved product images for product_id: {product_id}")
+            return jsonify(parsed_data), status_code
 
         except Exception as e:
             logger.error(f"Error getting product images: {e}")
