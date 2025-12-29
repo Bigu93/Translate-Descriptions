@@ -56,7 +56,7 @@ class ProductHandlers:
             lang_id = data.get("lang_id", "all")
             fields = data.get("fields", "")
 
-            if not product_id or not shop_id:
+            if product_id is None or shop_id is None:
                 return jsonify(error="product_id and shop_id are required"), 400
 
             # Parse fields into a list
@@ -124,7 +124,7 @@ class ProductHandlers:
             product_id = data.get("product_id")
             size_code = data.get("size_code")
 
-            if not product_id or not size_code:
+            if product_id is None or size_code is None:
                 return jsonify(error="product_id and size_code are required"), 400
 
             params = [product_id, size_code]
