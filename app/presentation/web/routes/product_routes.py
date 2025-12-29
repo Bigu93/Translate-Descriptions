@@ -25,13 +25,17 @@ def create_product_routes() -> Blueprint:
     """
     blueprint = Blueprint("products", __name__, url_prefix="/api/products")
 
-    @blueprint.route("/descriptions", methods=["GET", "POST"])
+    @blueprint.route("/descriptions", methods=["GET", "POST", "PUT"])
     @log_request_response
     @log_performance
-    def get_product_description():
-        """Get product descriptions by product ID and shop ID."""
+    def handle_product_description():
+        """Handle product descriptions (GET/POST for retrieve, PUT for update)."""
         registry = get_handler_registry()
-        return registry.product_handlers.get_product_description()
+        
+        if request.method in ["GET", "POST"]:
+            return registry.product_handlers.get_product_description()
+        elif request.method == "PUT":
+            return registry.product_handlers.set_product_description()
 
     @blueprint.route("/info/sizecode", methods=["POST"])
     @log_request_response
@@ -72,13 +76,5 @@ def create_product_routes() -> Blueprint:
         """Get products info with pagination."""
         registry = get_handler_registry()
         return registry.product_handlers.get_products_info()
-
-    @blueprint.route("/descriptions", methods=["PUT"])
-    @log_request_response
-    @log_performance
-    def set_product_description():
-        """Set product descriptions."""
-        registry = get_handler_registry()
-        return registry.product_handlers.set_product_description()
 
     return blueprint
