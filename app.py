@@ -19,6 +19,7 @@ from app.presentation.web.handlers import (
     TranslationHandlers,
     AuthHandlers,
 )
+from app.presentation.web.handlers.handler_registry import get_handler_registry
 from app.core.services import (
     ProductService,
     TranslationService,
@@ -103,28 +104,55 @@ def initialize_services():
 
 def register_blueprints():
     """
-    Register all route blueprints.
-    Uses lazy initialization - only initializes services once on first request.
+    Register all route blueprints at module load time.
+    
+    Blueprints are registered immediately when the module loads, before any requests.
+    Handlers are initialized lazily via the handler registry on first request.
+    """
+    logger.info("Registering blueprints at module load time...")
+    
+    # Create blueprints without handlers (they will be fetched from registry)
+    product_routes = create_product_routes()
+    translation_routes = create_translation_routes()
+    auth_routes = create_auth_routes()
+    
+    # Register blueprints with the Flask app
+    logger.info("About to register product_routes blueprint")
+    app.register_blueprint(product_routes)
+    logger.info("product_routes blueprint registered successfully")
+    
+    logger.info("About to register translation_routes blueprint")
+    app.register_blueprint(translation_routes)
+    logger.info("translation_routes blueprint registered successfully")
+    
+    logger.info("About to register auth_routes blueprint")
+    app.register_blueprint(auth_routes)
+    logger.info("auth_routes blueprint registered successfully")
+    
+    logger.info("All blueprints registered successfully at module load time")
+
+
+def initialize_handlers():
+    """
+    Initialize all handlers and register them in the handler registry.
+    
+    This function is called lazily on the first non-static request.
+    Handlers are created and stored in the registry for use by route handlers.
     """
     global _services_initialized
     
-    # DIAGNOSTIC: Log entry point
-    logger.info("[DIAGNOSTIC] register_blueprints() called")
-    
     # Return early if already initialized
     if _services_initialized:
-        logger.info("[DIAGNOSTIC] Services already initialized, returning early")
         return
     
     # Use lock to prevent race conditions during initialization
     with _initialization_lock:
         # Double-check pattern in case another thread initialized while waiting for lock
         if _services_initialized:
-            logger.info("[DIAGNOSTIC] Services already initialized (double-check), returning early")
             return
         
         try:
-            logger.info("Initializing services...")
+            logger.info("Initializing handlers...")
             products_client, product_service, translation_service, auth_service, token_service = initialize_services()
 
             # Create handlers
@@ -132,29 +160,14 @@ def register_blueprints():
             translation_handlers = TranslationHandlers(translation_service)
             auth_handlers = AuthHandlers(auth_service, token_service)
 
-            # Create routes
-            product_routes = create_product_routes(product_handlers)
-            translation_routes = create_translation_routes(translation_handlers)
-            auth_routes = create_auth_routes(auth_handlers)
-
-            # DIAGNOSTIC: Log before blueprint registration
-            logger.info("[DIAGNOSTIC] About to register product_routes blueprint")
-            # Register blueprints
-            app.register_blueprint(product_routes)
-            logger.info("[DIAGNOSTIC] product_routes blueprint registered successfully")
-            
-            logger.info("[DIAGNOSTIC] About to register translation_routes blueprint")
-            app.register_blueprint(translation_routes)
-            logger.info("[DIAGNOSTIC] translation_routes blueprint registered successfully")
-            
-            logger.info("[DIAGNOSTIC] About to register auth_routes blueprint")
-            app.register_blueprint(auth_routes)
-            logger.info("[DIAGNOSTIC] auth_routes blueprint registered successfully")
+            # Register handlers in the registry
+            registry = get_handler_registry()
+            registry.initialize(product_handlers, translation_handlers, auth_handlers)
 
             _services_initialized = True
-            logger.info("All blueprints registered successfully")
+            logger.info("All handlers initialized and registered successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize services: {e}")
+            logger.error(f"Failed to initialize handlers: {e}")
             raise
 
 
@@ -203,13 +216,15 @@ def register_request_logging():
 register_error_handlers()
 register_request_logging()
 
-# Add before_request handler for lazy initialization
+# Register blueprints at module load time (before any requests)
+register_blueprints()
+
+# Add before_request handler for lazy handler initialization
 logger.info("[DIAGNOSTIC] About to register @app.before_request handler")
 @app.before_request
 def ensure_initialized():
-    logger.info("[DIAGNOSTIC] ensure_initialized function defined")
     """
-    Ensure services are initialized before processing requests.
+    Ensure handlers are initialized before processing requests.
     This implements lazy initialization pattern for Passenger compatibility.
     """
     # DIAGNOSTIC: Log when ensure_initialized is called
@@ -220,15 +235,15 @@ def ensure_initialized():
         logger.info(f"[DIAGNOSTIC] Skipping initialization for path: {request.path}")
         return
     
-    # DIAGNOSTIC: Log before attempting to register blueprints
-    logger.info(f"[DIAGNOSTIC] About to call register_blueprints() for path: {request.path}")
-    logger.info(f"[DIAGNOSTIC] Services already initialized: {_services_initialized}")
+    # DIAGNOSTIC: Log before attempting to initialize handlers
+    logger.info(f"[DIAGNOSTIC] About to call initialize_handlers() for path: {request.path}")
+    logger.info(f"[DIAGNOSTIC] Handlers already initialized: {_services_initialized}")
     
-    # Initialize services on first non-static request
-    register_blueprints()
+    # Initialize handlers on first non-static request
+    initialize_handlers()
     
-    # DIAGNOSTIC: Log after attempting to register blueprints
-    logger.info(f"[DIAGNOSTIC] register_blueprints() completed for path: {request.path}")
+    # DIAGNOSTIC: Log after attempting to initialize handlers
+    logger.info(f"[DIAGNOSTIC] initialize_handlers() completed for path: {request.path}")
 
 
 @app.route("/")
