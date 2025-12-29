@@ -43,9 +43,15 @@ logger_files = get_logger("static_files")
 # Create Flask app
 app = Flask(__name__)
 
+# DIAGNOSTIC: Log app creation
+logger.info("[DIAGNOSTIC] Flask app created")
+
 # Track initialization status for lazy loading
 _services_initialized = False
 _initialization_lock = threading.Lock()
+
+# DIAGNOSTIC: Log initialization state
+logger.info(f"[DIAGNOSTIC] Initial _services_initialized state: {_services_initialized}")
 
 # Configure CORS
 allowed_origins = get_allowed_origins()
@@ -102,14 +108,19 @@ def register_blueprints():
     """
     global _services_initialized
     
+    # DIAGNOSTIC: Log entry point
+    logger.info("[DIAGNOSTIC] register_blueprints() called")
+    
     # Return early if already initialized
     if _services_initialized:
+        logger.info("[DIAGNOSTIC] Services already initialized, returning early")
         return
     
     # Use lock to prevent race conditions during initialization
     with _initialization_lock:
         # Double-check pattern in case another thread initialized while waiting for lock
         if _services_initialized:
+            logger.info("[DIAGNOSTIC] Services already initialized (double-check), returning early")
             return
         
         try:
@@ -126,10 +137,19 @@ def register_blueprints():
             translation_routes = create_translation_routes(translation_handlers)
             auth_routes = create_auth_routes(auth_handlers)
 
+            # DIAGNOSTIC: Log before blueprint registration
+            logger.info("[DIAGNOSTIC] About to register product_routes blueprint")
             # Register blueprints
             app.register_blueprint(product_routes)
+            logger.info("[DIAGNOSTIC] product_routes blueprint registered successfully")
+            
+            logger.info("[DIAGNOSTIC] About to register translation_routes blueprint")
             app.register_blueprint(translation_routes)
+            logger.info("[DIAGNOSTIC] translation_routes blueprint registered successfully")
+            
+            logger.info("[DIAGNOSTIC] About to register auth_routes blueprint")
             app.register_blueprint(auth_routes)
+            logger.info("[DIAGNOSTIC] auth_routes blueprint registered successfully")
 
             _services_initialized = True
             logger.info("All blueprints registered successfully")
@@ -184,18 +204,31 @@ register_error_handlers()
 register_request_logging()
 
 # Add before_request handler for lazy initialization
+logger.info("[DIAGNOSTIC] About to register @app.before_request handler")
 @app.before_request
 def ensure_initialized():
+    logger.info("[DIAGNOSTIC] ensure_initialized function defined")
     """
     Ensure services are initialized before processing requests.
     This implements lazy initialization pattern for Passenger compatibility.
     """
+    # DIAGNOSTIC: Log when ensure_initialized is called
+    logger.info(f"[DIAGNOSTIC] ensure_initialized called for path: {request.path}")
+    
     # Skip initialization for static files and health check endpoints
     if request.path.startswith("/static/") or request.path in ["/health", "/", "/favicon.ico"]:
+        logger.info(f"[DIAGNOSTIC] Skipping initialization for path: {request.path}")
         return
+    
+    # DIAGNOSTIC: Log before attempting to register blueprints
+    logger.info(f"[DIAGNOSTIC] About to call register_blueprints() for path: {request.path}")
+    logger.info(f"[DIAGNOSTIC] Services already initialized: {_services_initialized}")
     
     # Initialize services on first non-static request
     register_blueprints()
+    
+    # DIAGNOSTIC: Log after attempting to register blueprints
+    logger.info(f"[DIAGNOSTIC] register_blueprints() completed for path: {request.path}")
 
 
 @app.route("/")
@@ -215,6 +248,9 @@ def favicon():
     """Handle favicon requests to prevent 404 errors."""
     return "", 204
 
+
+# DIAGNOSTIC: Log when app.py module is fully loaded
+logger.info("[DIAGNOSTIC] app.py module fully loaded")
 
 if __name__ == "__main__":
     logger.info("Starting Translate Descriptions application")
