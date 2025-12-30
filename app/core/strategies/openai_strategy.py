@@ -80,18 +80,6 @@ class OpenAIStrategy(TranslationStrategy):
             }
         ]
         
-        # DEBUG: Log diagnostic information
-        if self._logger:
-            self._logger.warning(f"=== DEBUG: OpenAI Translation Call ===")
-            self._logger.warning(f"Model: {self._model}")
-            self._logger.warning(f"Content Type: {content_type}")
-            self._logger.warning(f"System Prompt (first 200 chars): {system_prompt[:200]}...")
-            self._logger.warning(f"System Prompt contains 'json': {'json' in system_prompt.lower()}")
-            self._logger.warning(f"User Prompt: {messages[1]['content']}")
-            self._logger.warning(f"User Prompt contains 'json': {'json' in messages[1]['content'].lower()}")
-            self._logger.warning(f"Response Format: json_object")
-            self._logger.warning(f"======================================")
-        
         try:
             if self._logger:
                 self._logger.debug(
@@ -165,19 +153,11 @@ class OpenAIStrategy(TranslationStrategy):
         
         prompt_file = prompt_files.get(content_type)
         
-        # DEBUG: Log which content type and prompt file is being used
-        if self._logger:
-            self._logger.warning(f"=== DEBUG: System Prompt Selection ===")
-            self._logger.warning(f"Content Type received: '{content_type}'")
-            self._logger.warning(f"Prompt file matched: {prompt_file if prompt_file else 'NONE - using fallback'}")
-            self._logger.warning(f"Available content types: {list(prompt_files.keys())}")
-            self._logger.warning(f"======================================")
-        
         if not prompt_file:
             # Fallback prompt now includes "json" to satisfy OpenAI's requirement
             fallback_prompt = "You are a language translator. Translate the provided text. Respond with a valid JSON object."
             if self._logger:
-                self._logger.warning(f"Using fallback prompt: {fallback_prompt}")
+                self._logger.warning(f"Unknown content type '{content_type}', using fallback prompt")
             return fallback_prompt
         
         # Load prompt from YAML file
@@ -185,17 +165,12 @@ class OpenAIStrategy(TranslationStrategy):
         try:
             with open(prompt_path, 'r', encoding='utf-8') as f:
                 prompt_data = yaml.safe_load(f)
-                loaded_prompt = prompt_data.get('prompt', '')
-                if self._logger:
-                    self._logger.warning(f"Loaded prompt from {prompt_file}")
-                    self._logger.warning(f"Prompt contains 'json': {'json' in loaded_prompt.lower()}")
-                return loaded_prompt
+                return prompt_data.get('prompt', '')
         except Exception as e:
             if self._logger:
-                self._logger.warning(f"Failed to load prompt file: {e}")
+                self._logger.warning(f"Failed to load prompt file '{prompt_file}': {e}")
             # Fallback prompt now includes "json" to satisfy OpenAI's requirement
             fallback_prompt = "You are a language translator. Translate the provided text. Respond with a valid JSON object."
-            self._logger.warning(f"Using fallback prompt due to error: {fallback_prompt}")
             return fallback_prompt
     
     def _build_user_prompt(
@@ -235,9 +210,6 @@ class OpenAIStrategy(TranslationStrategy):
         Returns:
             Dictionary mapping language codes to translated text
         """
-        # Log the raw response for debugging
-        if self._logger:
-            self._logger.warning(f"Raw OpenAI response content: {repr(response_content)}")
         
         try:
             # Try to parse as JSON directly
