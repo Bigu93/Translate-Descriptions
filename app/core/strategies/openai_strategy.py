@@ -194,10 +194,10 @@ class OpenAIStrategy(TranslationStrategy):
             get_language_name(lang) for lang in target_languages
         ]
         
-        prompt = f"[{text}] Langs:[{','.join(language_names)}]"
+        prompt = f"Text to translate: {text}\nTarget languages: {', '.join(language_names)}"
         
         if category:
-            prompt += f" Category:[{category}]"
+            prompt += f"\nCategory: {category}"
         
         return prompt
     
