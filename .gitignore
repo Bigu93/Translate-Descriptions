@@ -166,3 +166,6 @@ tmp/
 plans/
 logs/
 docs/
+updated_location_userscript.js
+updated_order_userscript.js
+updated_userscript.js
