@@ -39,7 +39,7 @@ def require_auth(auth_func: Callable[[str], bool]) -> Callable:
                 logger.warning("Invalid Authorization header format")
                 return jsonify(error="Invalid Authorization header format"), 401
 
-            token = auth_header[7:]  # Remove "Bearer " prefix
+            token = auth_header[7:]
 
             try:
                 if not auth_func(token):

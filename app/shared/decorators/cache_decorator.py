@@ -36,12 +36,10 @@ def cache(ttl: int = 3600, key_prefix: str = ""):
                 key_prefix, func.__name__, args, kwargs
             )
             
-            # Try to get from cache
             cached_result = cache_provider.get(cache_key)
             if cached_result is not None:
                 return cached_result
             
-            # Execute function and cache result
             result = func(*args, **kwargs)
             cache_provider.set(cache_key, result, ttl)
             return result

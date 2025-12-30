@@ -28,7 +28,6 @@ class HandlerRegistry:
     
     def __init__(self):
         """Initialize registry with None handlers."""
-        # Skip if already initialized (Singleton pattern)
         if hasattr(self, '_initialized') and self._initialized:
             return
         
@@ -67,7 +66,6 @@ class HandlerRegistry:
         ])
 
 
-# Global registry instance
 _registry: Optional[HandlerRegistry] = None
 
 

@@ -48,17 +48,14 @@ class TranslationService(ITranslationService):
         Returns:
             Translation response with translated text and metadata
         """
-        # Generate cache key
         cache_key = self._generate_cache_key(request)
         
-        # Try to get from cache
         cached_result = self._cache.get(cache_key)
         if cached_result is not None:
             if self._logger:
                 self._logger.debug(f"Cache hit for translation: {cache_key}")
             return TranslationResponse(**cached_result)
         
-        # Perform translation
         translations = self._strategy.translate(
             text=request.text,
             target_languages=request.target_languages,
@@ -66,15 +63,13 @@ class TranslationService(ITranslationService):
             category=request.category
         )
         
-        # Create response
         response = TranslationResponse(
             translations=translations,
-            tokens_used=0,  # Would be set by strategy
+            tokens_used=0,
             model=self._strategy.get_provider_name(),
             timestamp=request.timestamp if hasattr(request, 'timestamp') else None
         )
         
-        # Cache result
         cache_data = {
             "translations": translations,
             "tokens_used": response.tokens_used,
@@ -145,7 +140,7 @@ class TranslationService(ITranslationService):
             content_type=translate_type,
             category=category
         )
-        return translations, 0  # tokens_used is tracked by strategy
+        return translations, 0
     
     def generate_description(
         self,

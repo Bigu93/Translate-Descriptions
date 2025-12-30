@@ -29,7 +29,7 @@ class MemoryCache(ICacheProvider):
         self._cache: dict = {}
         self._timestamps: dict = {}
         self._default_ttl = default_ttl
-        self._lock = None  # For thread safety if needed
+        self._lock = None
     
     def get(self, key: str) -> Optional[Any]:
         """Get value from cache.
@@ -43,7 +43,6 @@ class MemoryCache(ICacheProvider):
         if key not in self._cache:
             return None
         
-        # Check if expired
         if self._is_expired(key):
             self.delete(key)
             return None

@@ -65,7 +65,6 @@ class BaseClient:
         if not ssl_verify:
             requests.packages.urllib3.disable_warnings()
 
-        # Set default headers
         self.session.headers.update(
             {
                 "Authorization": f"Bearer {self.auth_token}",

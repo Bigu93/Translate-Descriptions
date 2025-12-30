@@ -54,10 +54,8 @@ class GenerationService:
             'A comfortable t-shirt made from...'
         """
         try:
-            # Load the generation prompt
             prompt = load_prompt("generate")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -66,10 +64,8 @@ class GenerationService:
                 }
             ]
 
-            # Generate descriptions using the translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse the response
             if response_content is None:
                 raise TranslationError("Failed to generate descriptions: empty response")
 
@@ -112,10 +108,8 @@ class GenerationService:
             'T-Shirt - Buy Online'
         """
         try:
-            # Load the meta title prompt
             prompt = load_prompt("meta_title")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -124,10 +118,8 @@ class GenerationService:
                 }
             ]
 
-            # Generate meta titles using the translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse the response
             if response_content is None:
                 raise TranslationError("Failed to generate meta titles: empty response")
 
@@ -170,10 +162,8 @@ class GenerationService:
             'Discover our high-quality t-shirt...'
         """
         try:
-            # Load the meta description prompt
             prompt = load_prompt("meta_description")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -182,10 +172,8 @@ class GenerationService:
                 }
             ]
 
-            # Generate meta descriptions using the translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse the response
             if response_content is None:
                 raise TranslationError("Failed to generate meta descriptions: empty response")
 
@@ -228,10 +216,8 @@ class GenerationService:
             ['t-shirt', 'clothing', 'fashion']
         """
         try:
-            # Load the keywords prompt
             prompt = load_prompt("keywords")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -240,10 +226,8 @@ class GenerationService:
                 }
             ]
 
-            # Generate keywords using the translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse the response
             if response_content is None:
                 raise TranslationError("Failed to generate keywords: empty response")
 

@@ -30,13 +30,11 @@ def log_request_response(f: Callable) -> Callable:
     def decorated_function(*args: Any, **kwargs: Any) -> Any:
         start_time = time.time()
 
-        # Log request
         logger.info(
             f"Incoming request: {request.method} {request.path} "
             f"from {request.remote_addr}"
         )
 
-        # Store request details in Flask's g object
         g.request_start_time = start_time
         g.request_method = request.method
         g.request_path = request.path
@@ -44,10 +42,8 @@ def log_request_response(f: Callable) -> Callable:
         try:
             response = f(*args, **kwargs)
 
-            # Calculate duration
             duration = time.time() - start_time
 
-            # Log response
             logger.info(
                 f"Request completed: {request.method} {request.path} "
                 f"status: {response[1] if isinstance(response, tuple) else 200} "
@@ -85,7 +81,6 @@ def log_request_details(f: Callable) -> Callable:
     def decorated_function(*args: Any, **kwargs: Any) -> Any:
         start_time = time.time()
 
-        # Log detailed request information
         logger.debug(
             f"Request details:\n"
             f"  Method: {request.method}\n"
@@ -95,7 +90,6 @@ def log_request_details(f: Callable) -> Callable:
             f"  Remote Addr: {request.remote_addr}"
         )
 
-        # Log request body if present (for POST/PUT)
         if request.method in ["POST", "PUT", "PATCH"]:
             try:
                 if request.is_json:
@@ -110,7 +104,6 @@ def log_request_details(f: Callable) -> Callable:
 
             duration = time.time() - start_time
 
-            # Log response details
             if isinstance(response, tuple):
                 status_code = response[1] if len(response) > 1 else 200
                 response_data = response[0]
@@ -190,13 +183,11 @@ def log_performance(f: Callable) -> Callable:
 
             duration = time.time() - start_time
 
-            # Log performance metrics
             logger.info(
                 f"Performance: {request.method} {request.path} "
                 f"completed in {duration:.3f}s"
             )
 
-            # Log warning if request took too long (> 5 seconds)
             if duration > 5:
                 logger.warning(
                     f"Slow request detected: {request.method} {request.path} "

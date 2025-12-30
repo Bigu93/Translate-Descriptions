@@ -45,7 +45,6 @@ class StructuredLogger(ILogger):
         Args:
             name: Logger name
         """
-        # Skip initialization if already done (Singleton pattern)
         if hasattr(self, '_initialized') and self._initialized:
             return
         
@@ -60,25 +59,20 @@ class StructuredLogger(ILogger):
         
         settings = Settings.get_instance()
         
-        # Set log level
         log_level = getattr(logging, settings.logging.level, logging.INFO)
         self._logger.setLevel(log_level)
         
-        # Clear existing handlers
         self._logger.handlers.clear()
         
-        # Create formatter
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         
-        # Console handler
         console_handler = logging.StreamHandler()
         console_handler.setLevel(log_level)
         console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
         
-        # File handler with rotation
         log_dir = settings.logging.log_dir
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -92,7 +86,6 @@ class StructuredLogger(ILogger):
         file_handler.setFormatter(formatter)
         self._logger.addHandler(file_handler)
         
-        # Prevent propagation to avoid duplicate logs
         self._logger.propagate = False
     
     def debug(self, message: str, **kwargs):

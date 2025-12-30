@@ -11,10 +11,8 @@ from dataclasses import dataclass, field
 from dotenv import load_dotenv
 from typing import Dict, Any, Optional
 
-# Configure logging for module-level messages
 logger = logging.getLogger(__name__)
 
-# Load environment variables with error handling
 try:
     loaded = load_dotenv()
     if loaded:
@@ -51,7 +49,7 @@ class IdoSellConfig:
     client_username: str
     client_secret: str
     base_url: str
-    api_version: str = "v3"
+    api_version: str = "v6"
     ssl_verify: bool = True
 
 
@@ -67,14 +65,14 @@ class LoggingConfig:
     level: str = "INFO"
     log_dir: str = "logs"
     max_bytes: int = 10000
-    backup_count: int = 10
+    backup_count: int = 3
 
 
 @dataclass(frozen=True)
 class CacheConfig:
     """Cache configuration."""
     enabled: bool = True
-    ttl: int = 3600  # 1 hour default
+    ttl: int = 3600  # 1 hour
     backend: str = "memory"  # memory, redis
 
 
@@ -106,7 +104,7 @@ class Settings:
         client_username=os.getenv("IDOSELL_CLIENT_USERNAME", ""),
         client_secret=os.getenv("IDOSELL_CLIENT_SECRET", ""),
         base_url=os.getenv("IDOSELL_BASE_URL", ""),
-        api_version=os.getenv("API_VERSION", "v3"),
+        api_version=os.getenv("API_VERSION", "v6"),
         ssl_verify=os.getenv("SSL_VERIFY", "true").lower() == "true"
     ))
     
@@ -160,7 +158,6 @@ class Settings:
         from app.core.domain.exceptions import ConfigurationError
         errors = []
         
-        # Validate database config
         if not self.database.host:
             errors.append("Database host is required")
         if not self.database.database:
@@ -172,13 +169,11 @@ class Settings:
         if self.database.pool_size < 1:
             errors.append("Pool size must be at least 1")
         
-        # Validate OpenAI config
         if not self.openai.api_key:
             errors.append("OpenAI API key is required")
         if not self.openai.model:
             errors.append("OpenAI model is required")
         
-        # Validate IdoSell config
         if not self.ido_sell.client_username:
             errors.append("IdoSell client username is required")
         if not self.ido_sell.client_secret:
@@ -186,7 +181,6 @@ class Settings:
         if not self.ido_sell.base_url:
             errors.append("IdoSell base URL is required")
         
-        # Validate VIES config
         if not self.vies.wsdl_url:
             errors.append("VIES WSDL URL is required")
         
@@ -219,22 +213,18 @@ def load_prompt(prompt_name: str) -> str:
     import yaml
     from pathlib import Path
     
-    # Build the path to the prompt file
     prompts_dir = Path(__file__).parent / "prompts"
     prompt_file = prompts_dir / f"{prompt_name}.yaml"
     
-    # Check if the file exists
     if not prompt_file.exists():
         raise FileNotFoundError(
             f"Prompt file not found: {prompt_file}"
         )
     
     try:
-        # Load the YAML file
         with open(prompt_file, 'r', encoding='utf-8') as f:
             prompt_data = yaml.safe_load(f)
         
-        # Extract the prompt content
         if 'prompt' not in prompt_data:
             raise KeyError(
                 f"Prompt file '{prompt_file}' does not contain a 'prompt' key"
@@ -242,7 +232,6 @@ def load_prompt(prompt_name: str) -> str:
         
         prompt_content = prompt_data['prompt']
         
-        # Ensure the prompt is a string
         if not isinstance(prompt_content, str):
             raise ValueError(
                 f"Prompt content in '{prompt_file}' is not a string"
@@ -259,7 +248,6 @@ def load_prompt(prompt_name: str) -> str:
         raise
 
 
-# Convenience getter functions for accessing Settings singleton
 def get_settings() -> Settings:
     """
     Get the Settings singleton instance.

@@ -37,22 +37,18 @@ class RateLimiter:
         now = time.time()
         window_start = now - window_seconds
         
-        # Clean old requests
         self._requests[key] = [
             req_time for req_time in self._requests[key]
             if req_time > window_start
         ]
         
-        # Check limit
         if len(self._requests[key]) >= limit:
             return False
         
-        # Record this request
         self._requests[key].append(now)
         return True
 
 
-# Global rate limiter instance
 _rate_limiter = RateLimiter()
 
 
@@ -78,19 +74,16 @@ def rate_limit(
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Generate rate limit key
             if key_func:
                 key = key_func(*args, **kwargs)
             else:
                 key = func.__name__
             
-            # Check if allowed
             if not _rate_limiter.is_allowed(key, limit, window_seconds):
                 raise RateLimitExceededError(
                     f"Rate limit exceeded: {limit} requests per {window_seconds} seconds"
                 )
             
-            # Execute function
             return func(*args, **kwargs)
         
         return wrapper

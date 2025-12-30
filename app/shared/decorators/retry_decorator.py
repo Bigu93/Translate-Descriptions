@@ -43,15 +43,12 @@ def retry(
                 except exceptions as e:
                     last_exception = e
                     
-                    # If this is the last attempt, raise the exception
                     if attempt == max_attempts - 1:
                         raise last_exception
                     
-                    # Wait before retrying
                     time.sleep(current_delay)
                     current_delay *= backoff_factor
             
-            # This should not be reached, but just in case
             raise last_exception
         
         return wrapper
@@ -97,7 +94,6 @@ def retry_with_jitter(
                     if attempt == max_attempts - 1:
                         raise last_exception
                     
-                    # Add jitter to delay
                     jitter_amount = current_delay * jitter
                     actual_delay = current_delay + (random.random() * jitter_amount - jitter_amount / 2)
                     time.sleep(actual_delay)

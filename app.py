@@ -41,18 +41,14 @@ from app.config.settings import (
 logger = get_logger("app")
 logger_files = get_logger("static_files")
 
-# Create Flask app
 app = Flask(__name__)
 
-# Track initialization status for lazy loading
 _services_initialized = False
 _initialization_lock = threading.Lock()
 
-# Configure CORS
 allowed_origins = get_allowed_origins()
 CORS(app, resources={r"/*": {"origins": allowed_origins}})
 
-# Configure static file caching
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
 
@@ -63,33 +59,26 @@ def initialize_services():
     Returns:
         Tuple of (products_client, product_service, translation_service, auth_service, token_service)
     """
-    # Create products client
     base_url = get_base_url()
     client_username = get_client_username()
     client_secret = get_client_secret()
     products_client = create_products_client(base_url, client_username, client_secret)
 
-    # Create cache
     cache = get_cache_provider()
 
-    # Get logger for services
     service_logger = get_logger("services")
 
-    # Create translation strategy with logger
     openai_api_key = get_openai_api_key()
     openai_model = get_openai_model()
     translation_strategy = OpenAIStrategy(api_key=openai_api_key, model=openai_model, logger=service_logger)
 
-    # Create services
     product_service = ProductService(products_client)
     translation_service = TranslationService(translation_strategy, cache, service_logger)
     
-    # Initialize database-dependent services
     connection_pool = get_connection_pool()
     token_repository = TokenRepository(connection_pool)
     bearer_repository = BearerRepository(connection_pool)
     
-    # Create auth and token services with dependencies
     token_service = TokenService(token_repository, service_logger)
     auth_service = AuthService(bearer_repository, service_logger)
 
@@ -105,12 +94,10 @@ def register_blueprints():
     """
     logger.info("Registering blueprints at module load time...")
     
-    # Create blueprints without handlers (they will be fetched from registry)
     product_routes = create_product_routes()
     translation_routes = create_translation_routes()
     auth_routes = create_auth_routes()
     
-    # Register blueprints with the Flask app
     app.register_blueprint(product_routes)
     app.register_blueprint(translation_routes)
     app.register_blueprint(auth_routes)
@@ -127,13 +114,10 @@ def initialize_handlers():
     """
     global _services_initialized
     
-    # Return early if already initialized
     if _services_initialized:
         return
     
-    # Use lock to prevent race conditions during initialization
     with _initialization_lock:
-        # Double-check pattern in case another thread initialized while waiting for lock
         if _services_initialized:
             return
         
@@ -141,12 +125,10 @@ def initialize_handlers():
             logger.info("Initializing handlers...")
             products_client, product_service, translation_service, auth_service, token_service = initialize_services()
 
-            # Create handlers
             product_handlers = ProductHandlers(products_client)
             translation_handlers = TranslationHandlers(translation_service)
             auth_handlers = AuthHandlers(auth_service, token_service)
 
-            # Register handlers in the registry
             registry = get_handler_registry()
             registry.initialize(product_handlers, translation_handlers, auth_handlers)
 
@@ -198,27 +180,22 @@ def register_request_logging():
         return response
 
 
-# Register error handlers and request logging (these are safe to initialize at module level)
 register_error_handlers()
 register_request_logging()
 
-# Register blueprints at module load time (before any requests)
 register_blueprints()
 
-# Add before_request handler for lazy handler initialization
 @app.before_request
 def ensure_initialized():
     """
     Ensure handlers are initialized before processing requests.
     This implements lazy initialization pattern for Passenger compatibility.
     """
-    # Skip initialization for static files, health check endpoints, and OPTIONS preflight requests
     if (request.path.startswith("/static/") or
         request.path in ["/health", "/", "/favicon.ico"] or
         request.method == "OPTIONS"):
         return
     
-    # Initialize handlers on first non-static request
     initialize_handlers()
 
 

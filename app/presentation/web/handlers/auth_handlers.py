@@ -51,7 +51,6 @@ class AuthHandlers:
             if not username or not password:
                 return jsonify(error="username and password are required"), 400
 
-            # Authenticate user
             token = self.auth_service.authenticate(username, password)
 
             logger.info(f"User authenticated successfully: {username}")
@@ -85,9 +84,8 @@ class AuthHandlers:
             if not auth_header.startswith("Bearer "):
                 return jsonify(error="Invalid Authorization header format"), 401
 
-            token = auth_header[7:]  # Remove "Bearer " prefix
+            token = auth_header[7:]
 
-            # Validate token
             is_valid = self.token_service.validate_token(token)
 
             if is_valid:
@@ -129,7 +127,6 @@ class AuthHandlers:
 
             token = auth_header[7:]
 
-            # Refresh token
             new_token = self.token_service.refresh_token(token)
 
             logger.info("Token refreshed successfully")
@@ -165,7 +162,6 @@ class AuthHandlers:
 
             token = auth_header[7:]
 
-            # Revoke token
             self.token_service.revoke_token(token)
 
             logger.info("User logged out successfully")
@@ -200,7 +196,6 @@ class AuthHandlers:
 
             token = auth_header[7:]
 
-            # Get bearer token info
             bearer_info = self.auth_service.get_bearer_token(token)
 
             logger.info(f"Bearer token retrieved: {bearer_info[:10]}...")

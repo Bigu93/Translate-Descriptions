@@ -170,6 +170,5 @@ class AuthClient:
             >>> client._build_auth_url()
             'https://api.example.com/authorize/1/authorize/accessToken'
         """
-        # Remove the last part of base_url to get the gateway URL
         gateway_url = self.base_url.rsplit('/', 1)[0]
         return f"{gateway_url}/{self.auth_endpoint}"

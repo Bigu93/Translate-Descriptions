@@ -68,10 +68,8 @@ class OpenAIStrategy(TranslationStrategy):
         Raises:
             TranslationError: If translation fails
         """
-        # Get system prompt based on content type
         system_prompt = self._get_system_prompt(content_type)
         
-        # Build messages
         messages = [
             {"role": "system", "content": system_prompt},
             {
@@ -97,7 +95,6 @@ class OpenAIStrategy(TranslationStrategy):
                 response_format={"type": "json_object"}
             )
             
-            # Parse response
             response_content = response.choices[0].message.content.strip()
             translations = self._parse_response(response_content)
             
@@ -140,11 +137,10 @@ class OpenAIStrategy(TranslationStrategy):
         
         settings = Settings.get_instance()
         
-        # Map content types to prompt files
         prompt_files = {
-            "name": "product_name.yaml",  # Frontend sends "name"
+            "name": "product_name.yaml",
             "productName": "product_name.yaml",
-            "description": "product_description.yaml",  # Frontend sends "description"
+            "description": "product_description.yaml",  
             "productLongDescription": "product_description.yaml",
             "productMetaTitle": "meta_title.yaml",
             "productMetaDescription": "meta_description.yaml",
@@ -154,13 +150,11 @@ class OpenAIStrategy(TranslationStrategy):
         prompt_file = prompt_files.get(content_type)
         
         if not prompt_file:
-            # Fallback prompt now includes "json" to satisfy OpenAI's requirement
             fallback_prompt = "You are a language translator. Translate the provided text. Respond with a valid JSON object."
             if self._logger:
                 self._logger.warning(f"Unknown content type '{content_type}', using fallback prompt")
             return fallback_prompt
         
-        # Load prompt from YAML file
         prompt_path = f"app/config/prompts/{prompt_file}"
         try:
             with open(prompt_path, 'r', encoding='utf-8') as f:
@@ -169,7 +163,6 @@ class OpenAIStrategy(TranslationStrategy):
         except Exception as e:
             if self._logger:
                 self._logger.warning(f"Failed to load prompt file '{prompt_file}': {e}")
-            # Fallback prompt now includes "json" to satisfy OpenAI's requirement
             fallback_prompt = "You are a language translator. Translate the provided text. Respond with a valid JSON object."
             return fallback_prompt
     
@@ -189,7 +182,6 @@ class OpenAIStrategy(TranslationStrategy):
         Returns:
             Formatted user prompt string
         """
-        # Convert language codes to full names
         language_names = [
             get_language_name(lang) for lang in target_languages
         ]
@@ -212,13 +204,10 @@ class OpenAIStrategy(TranslationStrategy):
         """
         
         try:
-            # Try to parse as JSON directly
             parsed = json.loads(response_content)
             
-            # Convert language names back to codes
             translations = {}
             for lang_name, translated_text in parsed.items():
-                # Map back to language code
                 from app.shared.constants.languages import REVERSE_LANGUAGE_MAP
                 lang_code = REVERSE_LANGUAGE_MAP.get(lang_name, lang_name)
                 if lang_code:
@@ -227,11 +216,9 @@ class OpenAIStrategy(TranslationStrategy):
             return translations
             
         except json.JSONDecodeError as e:
-            # Log the JSON decode error
             if self._logger:
                 self._logger.warning(f"Direct JSON parse failed: {e}")
             
-            # Try to extract JSON from response
             try:
                 json_start = response_content.index("{")
                 json_end = response_content.rindex("}") + 1
@@ -242,7 +229,6 @@ class OpenAIStrategy(TranslationStrategy):
                 
                 parsed = json.loads(json_str)
                 
-                # Convert language names back to codes
                 translations = {}
                 for lang_name, translated_text in parsed.items():
                     from app.shared.constants.languages import REVERSE_LANGUAGE_MAP
@@ -253,7 +239,6 @@ class OpenAIStrategy(TranslationStrategy):
                 return translations
                 
             except ValueError as e:
-                # This is the "substring not found" error
                 if self._logger:
                     self._logger.error(
                         f"Failed to find JSON delimiters in response. "

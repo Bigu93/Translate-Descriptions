@@ -80,13 +80,11 @@ def parse_response_content_openai(response_content: str) -> Optional[Dict[str, A
         'Product'
     """
     try:
-        # First attempt: direct parsing
         parsed_json = json.loads(response_content)
         corrected_json = ensure_quotes_and_escape(parsed_json)
         return corrected_json
     except json.JSONDecodeError:
         try:
-            # Second attempt: extract JSON from response
             json_start = response_content.index("{")
             json_end = response_content.rindex("}") + 1
             json_str = response_content[json_start:json_end]

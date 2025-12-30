@@ -125,10 +125,8 @@ class BaseRepository(ABC):
                 conn.commit()
                 
                 if fetch:
-                    # Return results as list of dictionaries
                     cursor.fetchall()
                     results = cursor.fetchall()
-                    # Convert to list of dicts if not already
                     if results and isinstance(results[0], tuple):
                         columns = [desc[0] for desc in cursor.description]
                         results = [dict(zip(columns, row)) for row in results]

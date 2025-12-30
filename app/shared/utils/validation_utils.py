@@ -43,7 +43,6 @@ def validate_phone(phone: str) -> bool:
     """
     # Remove all non-digit characters except + at start
     cleaned = re.sub(r'[^\d+]', '', phone)
-    # Check if it's a valid length (between 7 and 15 digits)
     return len(cleaned) >= 7 and len(cleaned) <= 15
 
 
@@ -61,9 +60,7 @@ def sanitize_input(input_str: str) -> str:
         >>> sanitize_input("<script>alert('xss')</script>")
         '<script>alert('xss')</script>'
     """
-    # Remove potentially dangerous characters
     sanitized = re.sub(r'[<>]', '', input_str)
-    # Replace quotes with HTML entities
     sanitized = sanitized.replace('"', '"').replace("'", '\'')
     return sanitized.strip()
 

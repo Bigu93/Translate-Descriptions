@@ -62,7 +62,6 @@ class ConnectionPool:
         self._active_connections = 0
         self._lock = threading.Lock()
         
-        # Initialize pool
         self._initialize_pool()
     
     def _initialize_pool(self):
@@ -72,7 +71,6 @@ class ConnectionPool:
                 connection = self._create_connection()
                 self._pool.put(connection)
             except DatabaseError:
-                # Log error but continue trying to create other connections
                 pass
         
         if self._logger:
@@ -136,10 +134,8 @@ class ConnectionPool:
             DatabaseError: If pool is exhausted
         """
         try:
-            # Try to get from pool
             connection = self._pool.get(timeout=self._pool_timeout)
             
-            # Check if connection is still valid
             if not self._is_connection_valid(connection):
                 connection.close()
                 connection = self._create_connection()
@@ -154,7 +150,6 @@ class ConnectionPool:
             return connection
             
         except queue.Empty:
-            # Pool exhausted, try to create new connection
             with self._lock:
                 if self._active_connections < self._pool_size + self._max_overflow:
                     connection = self._create_connection()
@@ -232,7 +227,6 @@ class ConnectionPool:
         }
 
 
-# Singleton instance for connection pool
 _connection_pool_instance: Optional[ConnectionPool] = None
 
 

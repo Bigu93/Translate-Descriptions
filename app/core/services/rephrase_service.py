@@ -54,10 +54,8 @@ class RephraseService:
             'A cozy cotton t-shirt for everyday wear.'
         """
         try:
-            # Load rephrase prompt
             prompt = load_prompt("rephrase")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -66,10 +64,8 @@ class RephraseService:
                 }
             ]
 
-            # Rephrase descriptions using translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse response
             if response_content is None:
                 raise TranslationError("Failed to rephrase descriptions: empty response")
 
@@ -112,10 +108,8 @@ class RephraseService:
             'Men's Cotton Tee'
         """
         try:
-            # Load rephrase prompt
             prompt = load_prompt("rephrase")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -124,10 +118,8 @@ class RephraseService:
                 }
             ]
 
-            # Rephrase names using translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse response
             if response_content is None:
                 raise TranslationError("Failed to rephrase product names: empty response")
 
@@ -170,10 +162,8 @@ class RephraseService:
             'Shop T-Shirts Online'
         """
         try:
-            # Load rephrase prompt
             prompt = load_prompt("rephrase")
 
-            # Build messages for AI
             messages = [
                 {"role": "system", "content": prompt},
                 {
@@ -182,10 +172,8 @@ class RephraseService:
                 }
             ]
 
-            # Rephrase meta titles using translation strategy
             response_content, tokens_used = self.translation_strategy.translate(messages)
 
-            # Parse response
             if response_content is None:
                 raise TranslationError("Failed to rephrase meta titles: empty response")
 

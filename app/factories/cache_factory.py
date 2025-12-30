@@ -36,7 +36,6 @@ class CacheFactory:
             settings = Settings.get_instance()
             
             if not settings.cache.enabled:
-                # Create no-op cache if disabled
                 from app.infrastructure.cache.noop_cache import NoopCache
                 cls._instance = NoopCache()
             elif settings.cache.backend == "memory":
