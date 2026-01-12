@@ -51,6 +51,7 @@ def create_products_client(
             auth_token=token,
             version=api_version,
             ssl_verify=ssl_verify,
+            auth_client=auth_client,
             logger=logger,
         )
 
@@ -88,16 +89,17 @@ def create_auth_client(
         ... )
     """
     try:
+        effective_logger = logger or get_logger("auth")
         auth_client = AuthClient(
             base_url=base_url,
             client_username=client_username,
             client_secret=client_secret,
-            logger=logger or get_logger("auth"),
+            logger=effective_logger,
         )
 
-        logger.info("AuthClient created successfully")
+        effective_logger.info("AuthClient created successfully")
         return auth_client
 
     except Exception as e:
-        logger.error(f"Failed to create AuthClient: {e}")
+        (logger or get_logger("auth")).error(f"Failed to create AuthClient: {e}")
         raise

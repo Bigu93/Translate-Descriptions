@@ -20,9 +20,23 @@ class APIRequestError(Exception):
 
 
 class APIResponseError(Exception):
-    """Exception raised for invalid API responses."""
+    """Exception raised for invalid API responses.
 
-    pass
+    Carries HTTP status code and a truncated response body (when available)
+    so callers can implement smarter recovery (e.g. refresh token on 401).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        response_text: str = "",
+        url: str = "",
+    ):
+        super().__init__(message)
+        self.status_code = status_code
+        self.response_text = response_text
+        self.url = url
 
 
 class BaseClient:
@@ -74,6 +88,19 @@ class BaseClient:
         )
 
         self.logger.debug(f"BaseClient initialized for {self.url}")
+
+    def set_bearer_token(self, token: str) -> None:
+        """Update the Authorization header used for subsequent requests."""
+        self.auth_token = token or ""
+        self.session.headers["Authorization"] = f"Bearer {self.auth_token}"
+
+    @staticmethod
+    def _obfuscate_token(token: str) -> str:
+        if not token:
+            return "<empty>"
+        if len(token) <= 10:
+            return "****"
+        return f"{token[:4]}****{token[-3:]}"
 
     def get(self, endpoint: str, ep_params: Optional[Dict[str, Any]] = None) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -184,6 +211,19 @@ class BaseClient:
             f"Preparing {method} request to URL: {full_url} with params: {params} and data: {json}"
         )
 
+        # Helpful diagnostics when dealing with auth/token expiry issues.
+        try:
+            auth_header = self.session.headers.get("Authorization", "")
+            token = ""
+            if auth_header.lower().startswith("bearer "):
+                token = auth_header.split(" ", 1)[1]
+            self.logger.debug(
+                f"Authorization header present: {bool(auth_header)}; bearer token: {self._obfuscate_token(token)}"
+            )
+        except Exception:
+            # Never fail the request due to logging/diagnostics.
+            pass
+
         try:
             response = self.session.request(
                 method=method,
@@ -200,11 +240,22 @@ class BaseClient:
             raise APIRequestError(f"Request failed: {e}") from e
 
         if not 200 <= response.status_code < 300:
-            self.logger.error(
-                f"Unexpected status code: {response.status_code} - {response.text}"
-            )
+            response_text = (response.text or "")
+            truncated = response_text[:500]
+            www_auth = response.headers.get("WWW-Authenticate")
+            if www_auth:
+                self.logger.error(
+                    f"Unexpected status code: {response.status_code} - {truncated} (WWW-Authenticate: {www_auth})"
+                )
+            else:
+                self.logger.error(
+                    f"Unexpected status code: {response.status_code} - {truncated}"
+                )
             raise APIResponseError(
-                f"Unexpected status code: {response.status_code} - {response.text}"
+                f"Unexpected status code: {response.status_code} - {truncated}",
+                status_code=response.status_code,
+                response_text=truncated,
+                url=full_url,
             )
 
         try:
@@ -215,4 +266,9 @@ class BaseClient:
             self.logger.error(
                 f"JSON decode error: {e} - Response text: {response.text[:500]}"
             )
-            raise APIResponseError("Failed to decode JSON response.") from e
+            raise APIResponseError(
+                "Failed to decode JSON response.",
+                status_code=response.status_code,
+                response_text=(response.text or "")[:500],
+                url=full_url,
+            ) from e

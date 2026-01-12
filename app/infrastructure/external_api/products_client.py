@@ -1,10 +1,11 @@
 """
 Client for interacting with the Products API.
 """
-from typing import Tuple, Dict, Any, Optional, List
+from typing import Tuple, Dict, Any, Optional, List, Callable
 from app.infrastructure.logging.structured_logger import get_logger
 from app.infrastructure.external_api.base_client import BaseClient, APIRequestError, APIResponseError
-from app.core.domain.exceptions import ValidationError
+from app.infrastructure.external_api.auth_client import AuthClient
+from app.core.domain.exceptions import ValidationError, ExternalAPIError
 
 
 class ProductsClient:
@@ -18,6 +19,7 @@ class ProductsClient:
         auth_token: str,
         version: str = "v3",
         ssl_verify: bool = True,
+        auth_client: Optional[AuthClient] = None,
         logger: Optional[object] = None,
     ):
         """
@@ -40,6 +42,44 @@ class ProductsClient:
             hostname, auth_token, version, ssl_verify, logger
         )
         self.logger = logger if logger else get_logger("api")
+        self._auth_client = auth_client
+
+    def _ensure_token(self, force_refresh: bool = False) -> None:
+        """Ensure the BaseClient has a fresh Authorization header.
+
+        This app creates a singleton `ProductsClient` in [`app.initialize_services()`](Translate-Descriptions/app.py:55)
+        and keeps it for the whole process lifetime; external API tokens expire.
+        """
+        if not self._auth_client:
+            return
+        token = self._auth_client.get_token(force_refresh=force_refresh)
+        self._base_client.set_bearer_token(token)
+
+    def _call_with_optional_refresh(self, call: Callable[[], Tuple[int, str, Dict[str, Any]]]) -> Tuple[int, str, Dict[str, Any]]:
+        """Run a BaseClient call; on 401 refresh token once and retry."""
+        self._ensure_token(force_refresh=False)
+        try:
+            return call()
+        except APIResponseError as e:
+            if e.status_code == 401 and self._auth_client is not None:
+                self.logger.warning(
+                    "External API returned 401. Refreshing token and retrying once.",
+                    url=getattr(e, "url", ""),
+                )
+                # Force re-auth (token could be revoked/expired server-side).
+                self._ensure_token(force_refresh=True)
+                return call()
+            raise
+
+    @staticmethod
+    def _to_external_api_error(prefix: str, e: Exception) -> ExternalAPIError:
+        if isinstance(e, APIResponseError):
+            return ExternalAPIError(
+                f"{prefix}: {str(e)}",
+                status_code=getattr(e, "status_code", None),
+                response=getattr(e, "response_text", None),
+            )
+        return ExternalAPIError(f"{prefix}: {str(e)}")
 
     def get_product_description(self, params: List[Any]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -67,10 +107,10 @@ class ProductsClient:
 
         endpoint = f"products/descriptions?type=id&ids={params[0]}&shopId={params[1]}"
         try:
-            return self._base_client.get(endpoint=endpoint)
+            return self._call_with_optional_refresh(lambda: self._base_client.get(endpoint=endpoint))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get product description: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get product description", e) from e
 
     def get_product_info_with_sizecode(self, params: List[str]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -99,10 +139,10 @@ class ProductsClient:
         product_ids = ",".join(str(p) for p in params)
         endpoint = f"products/SKUbyBarcode?productIndices={product_ids}"
         try:
-            return self._base_client.get(endpoint=endpoint)
+            return self._call_with_optional_refresh(lambda: self._base_client.get(endpoint=endpoint))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get product info with size code: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get product info with size code", e) from e
 
     def get_product_full_info_with_sizecode(self, params: List[Any]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -130,10 +170,10 @@ class ProductsClient:
 
         endpoint = f"products/products?productIds={params[0]}-{params[1]}"
         try:
-            return self._base_client.get(endpoint=endpoint)
+            return self._call_with_optional_refresh(lambda: self._base_client.get(endpoint=endpoint))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get full product info with sizecode: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get full product info with sizecode", e) from e
 
     def get_product_full_info_with_ean(self, params: str) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -159,10 +199,10 @@ class ProductsClient:
 
         endpoint = f"products/products?productIds={params}"
         try:
-            return self._base_client.get(endpoint=endpoint)
+            return self._call_with_optional_refresh(lambda: self._base_client.get(endpoint=endpoint))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get full product info with EAN: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get full product info with EAN", e) from e
 
     def get_product_images(self, data: Dict[str, Any]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -188,10 +228,10 @@ class ProductsClient:
 
         endpoint = "products/products/get"
         try:
-            return self._base_client.post(endpoint=endpoint, data=data)
+            return self._call_with_optional_refresh(lambda: self._base_client.post(endpoint=endpoint, data=data))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get product images: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get product images", e) from e
 
     def get_products_info(self, data: Dict[str, Any]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -217,10 +257,10 @@ class ProductsClient:
 
         endpoint = "products/products/get"
         try:
-            return self._base_client.post(endpoint=endpoint, data=data)
+            return self._call_with_optional_refresh(lambda: self._base_client.post(endpoint=endpoint, data=data))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get products info: {e}")
-            raise
+            raise self._to_external_api_error("Failed to get products info", e) from e
 
     def set_product_description(self, data: Dict[str, Any]) -> Tuple[int, str, Dict[str, Any]]:
         """
@@ -250,7 +290,7 @@ class ProductsClient:
 
         endpoint = "products/descriptions"
         try:
-            return self._base_client.put(endpoint=endpoint, data=data)
+            return self._call_with_optional_refresh(lambda: self._base_client.put(endpoint=endpoint, data=data))
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to set product description: {e}")
-            raise
+            raise self._to_external_api_error("Failed to set product description", e) from e

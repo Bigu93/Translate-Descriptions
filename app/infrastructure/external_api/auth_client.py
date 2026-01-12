@@ -4,6 +4,7 @@ Client for handling API authentication.
 import requests
 import time
 import base64
+import threading
 from typing import Optional
 from app.infrastructure.logging.structured_logger import get_logger
 from app.shared.decorators.retry_decorator import retry
@@ -51,6 +52,7 @@ class AuthClient:
         self.buffer_time = buffer_time
         self.access_token = None
         self.token_expires = 0
+        self._lock = threading.Lock()
 
     @staticmethod
     def encode_credentials(client_username: str, client_secret: str) -> str:
@@ -99,7 +101,7 @@ class AuthClient:
             self.token_expires - self.buffer_time
         )
 
-    def get_token(self) -> str:
+    def get_token(self, force_refresh: bool = False) -> str:
         """
         Get a valid access token, authenticating if necessary.
 
@@ -114,9 +116,19 @@ class AuthClient:
             >>> print(token)
             'eyJhbGciOiJIUzI1NiIs...'
         """
-        if not self.is_token_valid():
-            self.authenticate()
-        return self.access_token
+        # Thread-safe: multiple concurrent requests can share one AuthClient.
+        with self._lock:
+            if force_refresh or not self.is_token_valid():
+                if force_refresh:
+                    self.logger.warning("Force-refreshing access token (previous token invalidated)")
+                self.authenticate()
+            return self.access_token
+
+    def invalidate_token(self) -> None:
+        """Invalidate current token so next `get_token()` re-authenticates."""
+        with self._lock:
+            self.access_token = None
+            self.token_expires = 0
 
     @retry(max_attempts=3, delay=1, backoff_factor=2, exceptions=(requests.RequestException,))
     def authenticate(self) -> None:
@@ -145,13 +157,16 @@ class AuthClient:
             data = response.json()
             self.access_token = data["access_token"]
             self.token_expires = time.time() + int(data["expires_in"])
-            self.logger.info("Authentication successful.")
+            ttl = int(self.token_expires - time.time())
+            self.logger.info("Authentication successful.", token_ttl_seconds=ttl)
         except requests.RequestException as e:
             self.logger.error(f"Error in authentication request: {e}")
             self.access_token = None
             self.token_expires = 0
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            response_text = getattr(getattr(e, "response", None), "text", "")
             raise AuthenticationError(
-                f"API Authentication Error: {e.response.status_code} - {e.response.text}"
+                f"API Authentication Error: {status_code} - {response_text}"
             ) from e
         except KeyError as e:
             self.logger.error(f"Unexpected response structure: {e}")
