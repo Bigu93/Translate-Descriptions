@@ -33,6 +33,9 @@ from app.config.settings import (
     get_base_url,
     get_client_username,
     get_client_secret,
+    get_api_version,
+    get_ssl_verify,
+    get_idosell_api_key,
     get_openai_api_key,
     get_openai_model,
 )
@@ -62,7 +65,17 @@ def initialize_services():
     base_url = get_base_url()
     client_username = get_client_username()
     client_secret = get_client_secret()
-    products_client = create_products_client(base_url, client_username, client_secret)
+    api_version = get_api_version()
+    ssl_verify = get_ssl_verify()
+    api_key = get_idosell_api_key()
+    products_client = create_products_client(
+        base_url,
+        client_username,
+        client_secret,
+        api_version=api_version,
+        ssl_verify=ssl_verify,
+        api_key=api_key,
+    )
 
     cache = get_cache_provider()
 

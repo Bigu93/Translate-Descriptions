@@ -98,14 +98,14 @@ def parse_product_images(json_data: Dict[str, Any]):
         json_data: The JSON response from the API
 
     Returns:
-        JSON response containing extracted image data
+        List of extracted image items.
 
     Example:
         >>> data = {"results": [{"productImages": [...]}]}
         >>> result = parse_product_images(data)
     """
     results = json_data.get("results", [])
-    extracted_data = []
+    extracted_data: List[Dict[str, Any]] = []
 
     for result in results:
         product_images = result.get("productImages", [])
@@ -117,7 +117,7 @@ def parse_product_images(json_data: Dict[str, Any]):
                 }
             )
 
-    return jsonify(extracted_data)
+    return extracted_data
 
 
 def parse_product_info(json_data: Dict[str, Any]) -> List[Dict[str, Any]]:

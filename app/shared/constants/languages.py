@@ -5,7 +5,6 @@ This module provides language code to full name mappings
 and reverse mappings for translation operations.
 """
 
-# Language code to full name mapping
 LANGUAGE_MAP = {
     "pol": "Polish",
     "bul": "Bulgarian",
@@ -28,10 +27,8 @@ LANGUAGE_MAP = {
     "ukr": "Ukrainian",
 }
 
-# Reverse mapping: full name to language code
 REVERSE_LANGUAGE_MAP = {v: k for k, v in LANGUAGE_MAP.items()}
 
-# Translation type constants
 TRANSLATION_TYPES = {
     "productName": "product_name",
     "productLongDescription": "product_description",

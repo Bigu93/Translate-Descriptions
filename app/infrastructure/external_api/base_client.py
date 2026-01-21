@@ -1,6 +1,7 @@
 """
 Base HTTP client for external API communication.
 """
+import time
 import requests
 import requests.packages
 from json import JSONDecodeError
@@ -50,6 +51,7 @@ class BaseClient:
         auth_token: str = "",
         version: str = "v3",
         ssl_verify: bool = True,
+        api_key: str = "",
         logger: Optional[object] = None,
     ):
         """
@@ -79,20 +81,27 @@ class BaseClient:
         if not ssl_verify:
             requests.packages.urllib3.disable_warnings()
 
-        self.session.headers.update(
-            {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            }
-        )
+        # Default headers.
+        # For IdoSell v6 the API commonly uses `X-API-KEY` auth.
+        # For older flows this client may use Bearer auth.
+        self.session.headers.update({"Accept": "application/json", "Content-Type": "application/json"})
+
+        if api_key:
+            self.session.headers["X-API-KEY"] = api_key
+
+        if self.auth_token:
+            self.session.headers["Authorization"] = f"Bearer {self.auth_token}"
 
         self.logger.debug(f"BaseClient initialized for {self.url}")
 
     def set_bearer_token(self, token: str) -> None:
         """Update the Authorization header used for subsequent requests."""
         self.auth_token = token or ""
-        self.session.headers["Authorization"] = f"Bearer {self.auth_token}"
+        if self.auth_token:
+            self.session.headers["Authorization"] = f"Bearer {self.auth_token}"
+        else:
+            # Avoid sending empty Authorization headers.
+            self.session.headers.pop("Authorization", None)
 
     @staticmethod
     def _obfuscate_token(token: str) -> str:
@@ -211,6 +220,8 @@ class BaseClient:
             f"Preparing {method} request to URL: {full_url} with params: {params} and data: {json}"
         )
 
+        start = time.monotonic()
+
         # Helpful diagnostics when dealing with auth/token expiry issues.
         try:
             auth_header = self.session.headers.get("Authorization", "")
@@ -232,11 +243,29 @@ class BaseClient:
                 json=json,
                 timeout=DEFAULT_TIMEOUT,
             )
+
+            duration_ms = int((time.monotonic() - start) * 1000)
+            json_keys = list(json.keys()) if isinstance(json, dict) else None
+            # NOTE: StructuredLogger stores context in `extra=...`, but the configured
+            # formatter prints only `%(message)s`. Put key diagnostics in the message.
+            self.logger.info(
+                "External API request completed: "
+                f"method={method} url={full_url} status_code={response.status_code} "
+                f"duration_ms={duration_ms} timeout_s={DEFAULT_TIMEOUT} "
+                f"params_present={bool(params)} json_keys={json_keys}"
+            )
             self.logger.debug(
                 f"Received response with status code: {response.status_code}"
             )
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Request exception: {e}")
+            duration_ms = int((time.monotonic() - start) * 1000)
+            json_keys = list(json.keys()) if isinstance(json, dict) else None
+            self.logger.error(
+                "External API request exception: "
+                f"method={method} url={full_url} duration_ms={duration_ms} "
+                f"timeout_s={DEFAULT_TIMEOUT} exception_type={type(e).__name__} "
+                f"params_present={bool(params)} json_keys={json_keys} error={e}"
+            )
             raise APIRequestError(f"Request failed: {e}") from e
 
         if not 200 <= response.status_code < 300:

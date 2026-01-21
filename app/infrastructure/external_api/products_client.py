@@ -20,6 +20,7 @@ class ProductsClient:
         version: str = "v3",
         ssl_verify: bool = True,
         auth_client: Optional[AuthClient] = None,
+        api_key: str = "",
         logger: Optional[object] = None,
     ):
         """
@@ -39,7 +40,12 @@ class ProductsClient:
             ... )
         """
         self._base_client = BaseClient(
-            hostname, auth_token, version, ssl_verify, logger
+            hostname=hostname,
+            auth_token=auth_token,
+            version=version,
+            ssl_verify=ssl_verify,
+            api_key=api_key,
+            logger=logger,
         )
         self.logger = logger if logger else get_logger("api")
         self._auth_client = auth_client
@@ -208,6 +214,9 @@ class ProductsClient:
         """
         Get product images.
 
+        For IdoSell v6, images are fetched via `products/products/search` with
+        `returnElements: ["pictures"]`.
+
         Args:
             data: Dictionary containing product IDs
 
@@ -219,16 +228,37 @@ class ProductsClient:
             APIRequestError: If the request fails
             APIResponseError: If the response is invalid
 
-        Example:
-            >>> client.get_product_images({"productIds": ["123", "456"]})
+        Example (preferred):
+            >>> client.get_product_images({"productIds": ["123"]})
             (200, 'OK', {'results': [...]})
         """
         if not isinstance(data, dict) or not data:
             raise ValidationError("data must be a non-empty dictionary.")
 
-        endpoint = "products/products/get"
+        # Accept simplified input from the app layer and convert it to the IdoSell v6
+        # search payload that returns pictures.
+        payload: Dict[str, Any] = data
+        if "params" not in payload:
+            product_ids = payload.get("productIds")
+            if isinstance(product_ids, (list, tuple)) and product_ids:
+                product_params = [{"productId": int(pid)} for pid in product_ids]
+            elif "product_id" in payload:
+                product_params = [{"productId": int(payload["product_id"])}]
+            else:
+                product_params = []
+
+            payload = {
+                "params": {
+                    "returnElements": ["pictures"],
+                    "productParams": product_params,
+                }
+            }
+
+        endpoint = "products/products/search"
         try:
-            return self._call_with_optional_refresh(lambda: self._base_client.post(endpoint=endpoint, data=data))
+            return self._call_with_optional_refresh(
+                lambda: self._base_client.post(endpoint=endpoint, data=payload)
+            )
         except (APIRequestError, APIResponseError) as e:
             self.logger.error(f"Failed to get product images: {e}")
             raise self._to_external_api_error("Failed to get product images", e) from e

@@ -43,8 +43,6 @@ class CacheFactory:
                     default_ttl=settings.cache.ttl
                 )
             elif settings.cache.backend == "redis":
-                # Placeholder for Redis implementation
-                # Would require redis-py package
                 raise ConfigurationError(
                     "Redis cache backend not yet implemented. "
                     "Use 'memory' backend instead."

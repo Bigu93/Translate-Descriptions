@@ -51,6 +51,7 @@ class IdoSellConfig:
     base_url: str
     api_version: str = "v6"
     ssl_verify: bool = True
+    api_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -83,56 +84,49 @@ class Settings:
     Centralized configuration management with validation.
     All settings are frozen (immutable) after initialization.
     """
-    
-    # Database
+
     database: DatabaseConfig = field(default_factory=lambda: DatabaseConfig(
         host=os.getenv("DB_HOST", "127.0.0.1"),
         database=os.getenv("DB_NAME", "translate_descriptions"),
         user=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASS", "")
     ))
-    
-    # OpenAI
+
     openai: OpenAIConfig = field(default_factory=lambda: OpenAIConfig(
         api_key=os.getenv("O_SECRET", ""),
         model=os.getenv("MODEL", "gpt-4"),
         timeout=int(os.getenv("OPENAI_TIMEOUT", "30") or "30")
     ))
-    
-    # IdoSell
+
     ido_sell: IdoSellConfig = field(default_factory=lambda: IdoSellConfig(
         client_username=os.getenv("IDOSELL_CLIENT_USERNAME", ""),
         client_secret=os.getenv("IDOSELL_CLIENT_SECRET", ""),
         base_url=os.getenv("IDOSELL_BASE_URL", ""),
         api_version=os.getenv("API_VERSION", "v6"),
-        ssl_verify=os.getenv("SSL_VERIFY", "true").lower() == "true"
+        ssl_verify=os.getenv("SSL_VERIFY", "true").lower() == "true",
+        api_key=os.getenv("IDOSELL_API_KEY", ""),
     ))
-    
-    # VIES
+
     vies: VIESConfig = field(default_factory=lambda: VIESConfig(
         wsdl_url=os.getenv("VIES", "https://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl")
     ))
-    
-    # Logging
+
     logging: LoggingConfig = field(default_factory=lambda: LoggingConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
         log_dir=os.getenv("LOG_DIR", "logs"),
         max_bytes=int(os.getenv("LOG_MAX_BYTES", "10000") or "10000"),
         backup_count=int(os.getenv("LOG_BACKUP_COUNT", "10") or "10")
     ))
-    
-    # Cache
+
     cache: CacheConfig = field(default_factory=lambda: CacheConfig(
         enabled=os.getenv("CACHE_ENABLED", "true").lower() == "true",
         ttl=int(os.getenv("CACHE_TTL", "3600") or "3600"),
         backend=os.getenv("CACHE_BACKEND", "memory")
     ))
-    
-    # Translation
+
     translation_provider: str = os.getenv("TRANSLATION_PROVIDER", "openai")
     translation_config: Dict[str, Any] = field(default_factory=dict)
-    
-    # CORS
+
     allowed_origins: str = os.getenv("ALLOWED_ORIGINS", "*")
     
     _instance: Optional['Settings'] = None
@@ -175,9 +169,12 @@ class Settings:
             errors.append("OpenAI model is required")
         
         if not self.ido_sell.client_username:
-            errors.append("IdoSell client username is required")
+            # Some deployments use X-API-KEY instead of OAuth client credentials.
+            if not self.ido_sell.api_key:
+                errors.append("IdoSell client username is required")
         if not self.ido_sell.client_secret:
-            errors.append("IdoSell client secret is required")
+            if not self.ido_sell.api_key:
+                errors.append("IdoSell client secret is required")
         if not self.ido_sell.base_url:
             errors.append("IdoSell base URL is required")
         
@@ -296,6 +293,21 @@ def get_client_secret() -> str:
         Client secret for API authentication
     """
     return get_settings().ido_sell.client_secret
+
+
+def get_api_version() -> str:
+    """Get the IdoSell API version (e.g. 'v6')."""
+    return get_settings().ido_sell.api_version
+
+
+def get_ssl_verify() -> bool:
+    """Get whether SSL verification is enabled for external API calls."""
+    return get_settings().ido_sell.ssl_verify
+
+
+def get_idosell_api_key() -> str:
+    """Get the IdoSell API key used for `X-API-KEY` authentication (v6)."""
+    return get_settings().ido_sell.api_key
 
 
 def get_openai_api_key() -> str:

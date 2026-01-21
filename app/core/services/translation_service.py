@@ -156,8 +156,6 @@ class TranslationService(ITranslationService):
         Returns:
             Tuple of (descriptions dictionary, tokens_used)
         """
-        # This would need to be implemented with a generation strategy
-        # For now, return empty dict
         return {}, 0
     
     def rephrase_description(
@@ -174,8 +172,6 @@ class TranslationService(ITranslationService):
         Returns:
             Tuple of (rephrased descriptions dictionary, tokens_used)
         """
-        # This would need to be implemented with a rephrase strategy
-        # For now, return empty dict
         return {}, 0
     
     def _generate_cache_key(self, request: TranslationRequest) -> str:

@@ -16,6 +16,7 @@ def create_products_client(
     client_secret: str,
     api_version: str = "v3",
     ssl_verify: bool = True,
+    api_key: str = "",
 ) -> ProductsClient:
     """
     Create and return a ProductsClient instance with authentication.
@@ -38,13 +39,18 @@ def create_products_client(
         ... )
     """
     try:
-        auth_client = AuthClient(
-            base_url=base_url,
-            client_username=client_username,
-            client_secret=client_secret,
-            logger=logger,
-        )
-        token = auth_client.get_token()
+        auth_client = None
+        token = ""
+
+        # Prefer X-API-KEY auth if configured.
+        if not api_key:
+            auth_client = AuthClient(
+                base_url=base_url,
+                client_username=client_username,
+                client_secret=client_secret,
+                logger=logger,
+            )
+            token = auth_client.get_token()
 
         products_client = ProductsClient(
             hostname=base_url,
@@ -52,6 +58,7 @@ def create_products_client(
             version=api_version,
             ssl_verify=ssl_verify,
             auth_client=auth_client,
+            api_key=api_key,
             logger=logger,
         )
 

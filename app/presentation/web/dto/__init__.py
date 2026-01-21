@@ -29,14 +29,12 @@ from app.presentation.web.dto.auth_dto import (
 )
 
 __all__ = [
-    # Translation DTOs
     "TranslationRequest",
     "TranslationResponse",
     "GenerationRequest",
     "GenerationResponse",
     "RephraseRequest",
     "RephraseResponse",
-    # Product DTOs
     "ProductDescriptionRequest",
     "ProductInfoWithSizecodeRequest",
     "ProductFullInfoWithSizecodeRequest",
@@ -45,7 +43,6 @@ __all__ = [
     "ProductsInfoRequest",
     "SetProductDescriptionRequest",
     "PaginationResponse",
-    # Auth DTOs
     "AuthenticationRequest",
     "AuthenticationResponse",
     "TokenValidationResponse",

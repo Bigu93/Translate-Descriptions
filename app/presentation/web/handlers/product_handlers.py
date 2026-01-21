@@ -188,19 +188,79 @@ class ProductHandlers:
             >>> response, status = handlers.get_product_images()
         """
         try:
-            data = request.get_json()
+            # NOTE:
+            # - Some callers hit this endpoint without a JSON body (e.g. browser navigation)
+            # - Some proxies/clients omit the correct Content-Type
+            # Using silent JSON parsing prevents Flask/Werkzeug from raising a BadRequest
+            # and lets us return a stable, explicit 400 response.
+            raw_body = request.get_data(cache=True) or b""
+            data = request.get_json(silent=True)
+            if data is None:
+                logger.warning(
+                    "Invalid or missing JSON body for get_product_images",
+                    content_type=request.content_type,
+                    content_length=request.content_length,
+                    raw_body_length=len(raw_body),
+                    path=request.path,
+                    method=request.method,
+                )
+                return (
+                    jsonify(
+                        error=(
+                            "Invalid or missing JSON body. "
+                            "Send Content-Type: application/json with a body like "
+                            '{"product_id":"123"}'
+                        )
+                    ),
+                    400,
+                )
+
             if not data:
-                return jsonify(error="Request body is required"), 400
+                return (
+                    jsonify(
+                        error=(
+                            "Request body is required. "
+                            'Expected JSON like {"product_id":"123"}.'
+                        )
+                    ),
+                    400,
+                )
 
+            # Accept legacy payload from this app endpoint ({"product_id":"..."})
+            # and transform it into the upstream API payload expected by the ProductsClient
+            # ({"productIds": ["..."]}).
             product_id = data.get("product_id")
-            if not product_id:
-                return jsonify(error="product_id is required"), 400
+            upstream_payload: Dict[str, Any]
 
-            status_code, reason, response_data = self.products_client.get_product_images(data)
+            if isinstance(data.get("productIds"), list) and data.get("productIds"):
+                upstream_payload = data
+            elif product_id:
+                upstream_payload = {"productIds": [str(product_id)]}
+            else:
+                return (
+                    jsonify(
+                        error=(
+                            "product_id is required. "
+                            'Expected JSON like {"product_id":"123"}.'
+                        )
+                    ),
+                    400,
+                )
+
+            logger.info(
+                "Calling upstream get_product_images with payload keys: "
+                f"{list(upstream_payload.keys())}"
+            )
+            status_code, reason, response_data = self.products_client.get_product_images(
+                upstream_payload
+            )
 
             parsed_data = parse_product_images(response_data)
 
-            logger.info(f"Retrieved product images for product_id: {product_id}")
+            logger.info(
+                "Retrieved product images",
+                product_id=str(product_id),
+            )
             return jsonify(parsed_data), status_code
 
         except Exception as e:
